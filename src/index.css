@@ -412,6 +412,37 @@ body.modal-open {
   border-color: var(--color-primary);
 }
 
+/* Analytics Summary */
+.analytics-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .analytics-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.analytics-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.analytics-stat-label {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.analytics-stat-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
 .segmented-btn.active {
   background: var(--color-surface);
   color: var(--color-primary);
