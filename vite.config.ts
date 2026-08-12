@@ -9,6 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig({
+  base: '/finance/',
   server: {
     proxy: {
       '/api/nbu': {
@@ -25,7 +26,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'favicon.ico', 'icons/*.png'],
       manifest: {
-        id: '/',
+        id: '/finance/',
         name: 'Финансовый планировщик',
         short_name: 'Финансы',
         description: 'Личный финансовый планировщик — расходы, доходы, бюджет',
@@ -33,8 +34,8 @@ export default defineConfig({
         background_color: '#f4f5f0',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
+        scope: '/finance/',
+        start_url: '/finance/',
         lang: 'ru',
         categories: ['finance', 'productivity'],
         icons: [
