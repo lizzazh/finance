@@ -365,6 +365,53 @@ body.modal-open {
   text-align: center;
 }
 
+.chart-tooltip {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  font-size: 0.85rem;
+}
+
+.chart-tooltip-label {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: var(--color-text);
+}
+
+/* Analytics Tabs */
+.period-tabs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+  padding-bottom: 0.25rem;
+}
+
+.period-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.period-tab {
+  padding: 0.35rem 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.period-tab.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
 .segmented-btn.active {
   background: var(--color-surface);
   color: var(--color-primary);
@@ -709,7 +756,12 @@ select option {
   }
   
   .app-main {
+    padding-top: max(1rem, env(safe-area-inset-top));
     padding-bottom: max(80px, calc(80px + env(safe-area-inset-bottom)));
+  }
+
+  .fab {
+    bottom: max(5rem, calc(5rem + env(safe-area-inset-bottom) - 0.5rem));
   }
 }
 
