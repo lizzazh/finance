@@ -73,14 +73,13 @@ body.modal-open {
 }
 
 .app-main {
-  padding: 1rem;
+  padding: 0 1rem 1rem 1rem;
   overflow-y: auto;
   padding-bottom: 80px;
 }
 @media (min-width: 768px) {
   .app-main {
-    padding: 2rem;
-    padding-bottom: 2rem;
+    padding: 0 2rem 2rem 2rem;
   }
 }
 
@@ -89,12 +88,18 @@ body.modal-open {
   position: sticky;
   top: 0;
   z-index: 30;
-  background: var(--color-bg);
+  background: rgba(18, 18, 18, 0.95);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  padding: 0.75rem 0;
-  margin: -0.25rem 0 0.5rem 0;
+  padding: max(1rem, env(safe-area-inset-top)) 1rem 0.75rem 1rem;
+  margin: 0 -1rem 1rem -1rem;
   border-bottom: 1px solid var(--color-border);
+}
+@media (min-width: 768px) {
+  .sticky-header {
+    padding: max(2rem, env(safe-area-inset-top)) 2rem 1rem 2rem;
+    margin: 0 -2rem 1.5rem -2rem;
+  }
 }
 
 /* Navigation */
@@ -741,8 +746,7 @@ select option {
 /* Mobile Responsive */
 @media (max-width: 767px) {
   .app-main {
-    padding: 0.75rem;
-    padding-bottom: 5rem;
+    padding: 0 0.75rem 5rem 0.75rem;
   }
   
   .modal {
@@ -800,7 +804,6 @@ select option {
   }
   
   .app-main {
-    padding-top: max(1rem, env(safe-area-inset-top));
     padding-bottom: max(80px, calc(80px + env(safe-area-inset-bottom)));
   }
 

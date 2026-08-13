@@ -134,7 +134,7 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col gap-6">
-      <header>
+      <header className="sticky-header">
         <h1 className="text-2xl font-bold">Настройки</h1>
         <p className="text-sm text-secondary">Управление внешним видом, валютой и уведомлениями</p>
       </header>
