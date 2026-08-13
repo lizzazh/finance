@@ -35,7 +35,8 @@ export function useDashboard() {
         monthlyExpenses,
         monthlyIncome,
         monthlySavings,
-        recentExpenses
+        recentExpenses,
+        cats
       ] = await Promise.all([
         balanceService.currentBalance(),
         dailyLimitCalculator.calculate(),
@@ -44,8 +45,11 @@ export function useDashboard() {
         analyticsService.getTotalExpenses(monthStart, monthEnd),
         analyticsService.getTotalIncome(monthStart, monthEnd),
         analyticsService.getTotalSavings(monthStart, monthEnd),
-        expensesRepo.getRecent(5)
+        expensesRepo.getRecent(5),
+        db.categories.toArray()
       ]);
+
+      const categoriesMap = new Map(cats.map(c => [c.id, c]));
 
       // Upcoming Events (next 7 days)
       const next7Days = addDays(currentDate, 7);
@@ -54,14 +58,21 @@ export function useDashboard() {
       // 1. Planned expenses
       const plannedExpenses = await expensesRepo.getByDateRange(currentDate, next7Days);
       for (const exp of plannedExpenses.filter(e => e.status === 'planned')) {
+        const cat = categoriesMap.get(exp.categoryId);
+        let name = cat?.name || 'Плановый расход';
+        if (exp.description) {
+          name = `${name} (${exp.description})`;
+        }
+        
         upcomingEvents.push({
           date: exp.date,
           type: 'expense',
-          name: exp.description || 'Плановый расход',
+          name,
           amount: exp.amount,
           currency: exp.currency,
           baseAmount: exp.baseAmount,
-          daysUntil: differenceInDays(currentDate, exp.date)
+          daysUntil: differenceInDays(currentDate, exp.date),
+          icon: cat?.icon
         });
       }
 
@@ -77,7 +88,8 @@ export function useDashboard() {
             amount: inc.amount,
             currency: inc.currency,
             baseAmount: inc.amount * rate,
-            daysUntil: differenceInDays(currentDate, inc.nextDate)
+            daysUntil: differenceInDays(currentDate, inc.nextDate),
+            icon: '💰'
           });
         }
       }

@@ -146,7 +146,9 @@ export default function Dashboard() {
                   <div key={i} className={`notification-card ${evt.type === 'expense' ? 'border-amber-500' : 'border-emerald-500'}`}>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-3">
-                        <span className="text-xl">{evt.type === 'expense' ? '🏠' : '💰'}</span>
+                        <span className="text-xl">
+                          {evt.icon ? evt.icon : (evt.type === 'expense' ? '🏠' : '💰')}
+                        </span>
                         <div>
                           <div className="font-medium text-sm">{evt.name}</div>
                           <div className="text-xs text-secondary">{toDisplayDate(evt.date, 'short')} • через {evt.daysUntil} дн.</div>

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { recurringExpensesRepo, recurringIncomesRepo, expensesRepo } from '../../db/repositories';
 import { formatAmount } from '../../utils/format';
 import { toDisplayDate, today } from '../../utils/date';
-import type { RecurringExpense, RecurringIncome, Expense } from '../../types';
+import type { RecurringExpense, RecurringIncome, Expense, Category } from '../../types';
+import { db } from '../../db/database';
 import { AddExpenseModal } from '../../components/expenses/AddExpenseModal';
 import { AddIncomeModal } from '../../components/incomes/AddIncomeModal';
 import { CheckCircle2, RotateCcw, Plus, Trash2 } from 'lucide-react';
@@ -14,6 +15,7 @@ export default function Recurring() {
   const [recurringExpenses, setRecurringExpenses] = useState<RecurringExpense[]>([]);
   const [recurringIncomes, setRecurringIncomes] = useState<RecurringIncome[]>([]);
   const [plannedExpenses, setPlannedExpenses] = useState<Expense[]>([]);
+  const [categoriesMap, setCategoriesMap] = useState<Map<string, Category>>(new Map());
 
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [addIncomeOpen, setAddIncomeOpen] = useState(false);
@@ -24,11 +26,14 @@ export default function Recurring() {
   const [ratesMap, setRatesMap] = useState<Record<string, number>>({});
 
   async function loadData() {
-    const [recExp, recInc, planned] = await Promise.all([
+    const [recExp, recInc, planned, cats] = await Promise.all([
       recurringExpensesRepo.getAll(),
       recurringIncomesRepo.getAll(),
       expensesRepo.getByStatus('planned'),
+      db.categories.toArray(),
     ]);
+
+    const catMap = new Map(cats.map(c => [c.id, c]));
 
     const uniqueCurrencies = Array.from(new Set([...recExp, ...recInc].map(item => item.currency)));
     const rates: Record<string, number> = {};
@@ -43,6 +48,7 @@ export default function Recurring() {
     setRecurringExpenses(recExp);
     setRecurringIncomes(recInc);
     setPlannedExpenses(planned.sort((a, b) => a.date.localeCompare(b.date)));
+    setCategoriesMap(catMap);
   }
 
   useEffect(() => {
@@ -122,15 +128,23 @@ export default function Recurring() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {plannedExpenses.map((exp) => (
-              <div key={exp.id} className="card flex items-center justify-between gap-4 p-4 border-l-4 border-amber-500">
-                <div className="min-w-0 flex-1">
-                  <div className="font-bold">{exp.description || 'Регулярный расход'}</div>
-                  <div className="text-xs text-secondary mt-1">
-                    Дата: <span className="font-medium text-text">{toDisplayDate(exp.date, 'long')}</span>
+            {plannedExpenses.map((exp) => {
+              const cat = categoriesMap.get(exp.categoryId);
+              return (
+                <div key={exp.id} className="card flex items-center justify-between gap-4 p-4 border-l-4 border-amber-500">
+                  <div className="flex gap-3 items-center min-w-0 flex-1">
+                    <div className="w-10 h-10 rounded-xl bg-primary-muted flex items-center justify-center text-xl shrink-0">
+                      {cat?.icon || '📦'}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold">{cat?.name || 'Без категории'}</div>
+                      <div className="text-xs text-secondary mt-0.5">
+                        {exp.description && <span>{exp.description} • </span>}
+                        <span className="font-medium text-text">{toDisplayDate(exp.date, 'long')}</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-4 shrink-0">
+                  <div className="flex items-center gap-4 shrink-0">
                   <div className="text-right">
                     <div className="font-bold text-expense">
                       −{formatAmount(exp.amount, exp.currency)}
@@ -150,7 +164,7 @@ export default function Recurring() {
                   </button>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>

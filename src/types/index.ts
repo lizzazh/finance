@@ -243,6 +243,7 @@ export interface UpcomingEvent {
   currency: CurrencyCode;
   baseAmount: number;
   daysUntil: number;
+  icon?: string;
 }
 
 // ─── Analytics ───────────────────────────────────────────────────────────────
