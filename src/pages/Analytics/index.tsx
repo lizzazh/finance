@@ -7,7 +7,6 @@ import { analyticsService } from '../../services/analytics';
 import type { DailyExpense, CategoryBreakdown, MonthlyComparison } from '../../types';
 import { startOfMonth, endOfMonth, today } from '../../utils/date';
 import { db } from '../../db/database';
-import { AddSavingsModal } from '../../components/savings/AddSavingsModal';
 
 type Period = 'month' | '3months' | '6months' | 'year';
 
@@ -47,7 +46,6 @@ export default function Analytics() {
   const [totals, setTotals] = useState({ income: 0, expenses: 0, savings: 0, avg: 0 });
   const [baseCurrency, setBaseCurrency] = useState('UAH');
   const [loading, setLoading] = useState(true);
-  const [savingsModalOpen, setSavingsModalOpen] = useState(false);
 
   const getDateRange = useCallback((): [string, string] => {
     const t = today();
@@ -127,8 +125,8 @@ export default function Analytics() {
               <div className="analytics-stat-label">Расходы</div>
               <div className="analytics-stat-value negative">−{totals.expenses.toLocaleString('ru-RU')} {currencySymbol}</div>
             </div>
-            <div className="card analytics-stat cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onClick={() => setSavingsModalOpen(true)} title="Добавить накопление">
-              <div className="analytics-stat-label">Накопления <span className="text-[10px] ml-1 bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">+</span></div>
+            <div className="card analytics-stat">
+              <div className="analytics-stat-label">Накопления</div>
               <div className="analytics-stat-value savings">{totals.savings.toLocaleString('ru-RU')} {currencySymbol}</div>
             </div>
             <div className="card analytics-stat">
@@ -230,8 +228,6 @@ export default function Analytics() {
           )}
         </>
       )}
-
-      <AddSavingsModal open={savingsModalOpen} onClose={() => setSavingsModalOpen(false)} onSaved={loadData} />
     </div>
   );
 }

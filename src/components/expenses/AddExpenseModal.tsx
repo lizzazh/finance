@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Plus } from 'lucide-react';
 import { AmountInput } from '../ui/AmountInput';
 import { expensesRepo, recurringExpensesRepo, categoriesRepo, incomesRepo, recurringIncomesRepo } from '../../db/repositories';
+import { db } from '../../db/database';
 import { currencyService } from '../../services/currency/currencyService';
 import { generateId } from '../../utils/id';
 import { today, getNextRecurringDate } from '../../utils/date';
@@ -29,6 +30,8 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
   const [categories, setCategories] = useState<Category[]>([]);
   const [convertedAmount, setConvertedAmount] = useState<number | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [recordType, setRecordType] = useState<'expense' | 'savings'>('expense');
 
   // Single vs Recurring
   const [expenseType, setExpenseType] = useState<'single' | 'recurring'>('single');
@@ -79,6 +82,7 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
         setDescription('');
         setIsSubmitting(false);
         setExpenseType('single');
+        setRecordType('expense');
         setFrequency('monthly');
         setStatus(curDate <= today() ? 'completed' : 'planned');
         setReminderOffset('1_day');
@@ -185,12 +189,38 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
 
   async function handleSave() {
     const amount = parseFloat(amountStr);
-    if (!amount || amount <= 0 || !categoryId || isSubmitting) return;
+    
+    // Validate amount
+    if (!amount || amount <= 0 || isSubmitting) return;
+
+    if (recordType === 'expense' && !categoryId) return;
 
     try {
       setIsSubmitting(true);
       const snapshot = await currencyService.buildSnapshot(amount, currency, baseCurrency, date);
       const now = new Date().toISOString();
+
+      if (recordType === 'savings') {
+        // Save as savings transaction
+        await db.savingsTransactions.add({
+          id: generateId(),
+          incomeId: 'manual', // Identifier for manual savings
+          amount,
+          currency,
+          exchangeRate: snapshot.exchangeRate,
+          baseAmount: snapshot.baseAmount,
+          baseCurrency: snapshot.baseCurrency,
+          ruleId: 'manual',
+          ruleType: 'fixed',
+          ruleValue: amount,
+          date,
+          createdAt: now
+        });
+        
+        onSaved?.();
+        onClose();
+        return;
+      }
 
       let recurringExpenseId: string | undefined = initialExpense?.recurringExpenseId;
 
@@ -304,11 +334,35 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
           </button>
         </div>
 
+        {/* Record Type Toggle */}
+        {!isEditing && (
+          <div className="px-4 pt-4 pb-0">
+            <div className="segmented-control">
+              <button
+                type="button"
+                className={`segmented-btn ${recordType === 'expense' ? 'active' : ''}`}
+                onClick={() => setRecordType('expense')}
+              >
+                Расход
+              </button>
+              <button
+                type="button"
+                className={`segmented-btn ${recordType === 'savings' ? 'active' : ''}`}
+                onClick={() => setRecordType('savings')}
+              >
+                В копилку
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Scrollable Body */}
         <div className="modal-body">
-          {/* Amount Calculation Mode Toggle */}
-          <div className="form-group">
-            <label className="label">Способ расчёта суммы</label>
+          {recordType === 'expense' && (
+            <>
+              {/* Amount Calculation Mode Toggle */}
+              <div className="form-group">
+                <label className="label">Способ расчёта суммы</label>
             <div className="segmented-control">
               <button
                 type="button"
@@ -379,17 +433,21 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
               )}
             </div>
           )}
+          </>
+          )}
 
-          {/* Amount & Currency Input */}
-          <AmountInput
-            label={amountMode === 'percentage_of_income' ? 'Рассчитанная сумма расхода' : 'Сумма'}
-            amount={amountStr}
-            currency={currency}
-            baseCurrency={baseCurrency}
-            onAmountChange={setAmountStr}
-            onCurrencyChange={setCurrency}
-            convertedAmount={convertedAmount}
-          />
+          {/* Amount Input (shown for both) */}
+          <div className="form-group">
+            <AmountInput
+              label={recordType === 'expense' && amountMode === 'percentage_of_income' ? 'Рассчитанная сумма расхода' : 'Сумма'}
+              amount={amountStr}
+              currency={currency}
+              baseCurrency={baseCurrency}
+              onAmountChange={setAmountStr}
+              onCurrencyChange={setCurrency}
+              convertedAmount={convertedAmount}
+            />
+          </div>
 
           {/* Category Grid */}
           <div className="form-group">
@@ -447,9 +505,7 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
 
           {/* Date */}
           <div className="form-group">
-            <label className="label">
-              {expenseType === 'recurring' ? 'Дата первого платежа (старт)' : 'Дата расхода'}
-            </label>
+            <label className="label">{recordType === 'expense' ? 'Дата расхода' : 'Дата пополнения'}</label>
             <input
               type="date"
               className="input"
@@ -459,6 +515,7 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
           </div>
 
           {/* Single vs Recurring Segmented Control */}
+          {recordType === 'expense' && (
           <div className="form-group">
             <label className="label">Тип расхода</label>
             <div className="segmented-control">
@@ -478,9 +535,10 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
               </button>
             </div>
           </div>
+          )}
 
           {/* Additional fields if Recurring */}
-          {expenseType === 'recurring' && (
+          {recordType === 'expense' && expenseType === 'recurring' && (
             <div className="card p-3 flex flex-col gap-3 bg-opacity-50">
               <div className="form-group">
                 <label className="label">Периодичность повторения</label>
@@ -547,6 +605,7 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
           )}
 
           {/* Status radio buttons */}
+          {recordType === 'expense' && (
           <div className="form-group">
             <label className="label">Статус расхода</label>
             <div className="segmented-control">
@@ -566,23 +625,26 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
               </button>
             </div>
           </div>
+          )}
 
           {/* Individual Reminder Offset */}
-          <div className="form-group">
-            <label className="label">🔔 Напоминание об этом платеже</label>
-            <CustomReminderPicker
-              value={parseReminderOffset(reminderOffset)}
-              onChange={(cfg) => setReminderOffset(formatReminderConfig(cfg))}
-            />
-          </div>
+          {recordType === 'expense' && expenseType === 'recurring' && (
+            <div className="form-group">
+              <label className="label">🔔 Напоминание об этом платеже</label>
+              <CustomReminderPicker
+                value={parseReminderOffset(reminderOffset)}
+                onChange={(cfg) => setReminderOffset(formatReminderConfig(cfg))}
+              />
+            </div>
+          )}
 
           {/* Description */}
           <div className="form-group">
-            <label className="label">Описание (необязательно)</label>
-            <input
-              type="text"
-              className="input"
-              placeholder="Например: Продукты в Сильпо"
+            <label className="label">Описание {recordType === 'savings' && '(опционально)'}</label>
+            <textarea
+              className="input resize-none"
+              rows={2}
+              placeholder={recordType === 'savings' ? 'Например: Отложил с подработки' : 'Например: Продукты в Сильпо'}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
