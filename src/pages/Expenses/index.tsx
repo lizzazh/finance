@@ -121,19 +121,17 @@ export default function Expenses() {
                 {exps.map((exp) => {
                   const cat = categories.get(exp.categoryId);
                   return (
-                    <div key={exp.id} className="py-3 px-2 flex items-center justify-between gap-3 group">
-                      <div className="flex gap-3 items-center min-w-0">
+                    <div key={exp.id} className="py-3 px-2 flex flex-col gap-2 group">
+                      {/* Row 1: Icon + Name + Amount */}
+                      <div className="flex items-start gap-3">
                         <div className="w-10 h-10 rounded-xl bg-primary-muted flex items-center justify-center text-xl shrink-0">
                           {cat?.icon || '📦'}
                         </div>
-                        <div className="min-w-0 flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="font-bold text-sm">{cat?.name || 'Без категории'}</div>
-                          {exp.description && <div className="text-xs text-secondary">{exp.description}</div>}
+                          {exp.description && <div className="text-xs text-secondary mt-0.5">{exp.description}</div>}
                         </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-right">
+                        <div className="text-right shrink-0">
                           <div className="font-bold text-expense text-base">
                             −{formatAmount(exp.amount, exp.currency)}
                           </div>
@@ -142,16 +140,18 @@ export default function Expenses() {
                               ≈ {formatAmount(exp.baseAmount, exp.baseCurrency)}
                             </div>
                           )}
-                          <div className="mt-0.5">
-                            {exp.status === 'planned' ? (
-                              <span className="badge-planned text-[10px]">Запланировано</span>
-                            ) : (
-                              <span className="badge-completed text-[10px]">Оплачено</span>
-                            )}
-                          </div>
                         </div>
+                      </div>
 
-                        {/* Action buttons */}
+                      {/* Row 2: Status + Actions */}
+                      <div className="flex items-center justify-between ml-13 pl-13" style={{marginLeft: '52px'}}>
+                        <div>
+                          {exp.status === 'planned' ? (
+                            <span className="badge-planned text-[10px]">Запланировано</span>
+                          ) : (
+                            <span className="badge-completed text-[10px]">Оплачено</span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1">
                           <button
                             className={`p-1.5 rounded-lg border transition-all ${exp.status === 'completed' ? 'border-emerald-500 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40' : 'border-border text-secondary hover:text-emerald-600'}`}
