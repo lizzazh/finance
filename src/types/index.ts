@@ -251,6 +251,7 @@ export interface DailyExpense {
   date: string;
   amount: number;
   count: number;
+  categoryNames?: string; // comma-separated list of category names for tooltip
 }
 
 export interface CategoryBreakdown {

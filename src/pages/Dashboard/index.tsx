@@ -128,7 +128,7 @@ export default function Dashboard() {
                   <Tooltip 
                     formatter={(value: any, _name: any, props: any) => [
                       formatAmount(Number(value), currentBalance.baseCurrency),
-                      props?.payload?.categoryName || 'Расходы'
+                      props?.payload?.categoryNames || 'Расходы'
                     ]}
                     labelFormatter={(label: any) => toDisplayDate(String(label), 'short')}
                   />

@@ -11,17 +11,32 @@ export const analyticsService = {
       .filter(e => e.status !== 'cancelled')
       .toArray();
 
-    const grouped: Record<string, DailyExpense> = {};
+    const categories = await db.categories.toArray();
+    const catMap = new Map(categories.map(c => [c.id, c]));
+
+    const grouped: Record<string, DailyExpense & { cats: Set<string> }> = {};
     
     for (const exp of expenses) {
       if (!grouped[exp.date]) {
-        grouped[exp.date] = { date: exp.date, amount: 0, count: 0 };
+        grouped[exp.date] = { date: exp.date, amount: 0, count: 0, cats: new Set() };
       }
       grouped[exp.date].amount += exp.baseAmount;
       grouped[exp.date].count += 1;
+      
+      const cat = catMap.get(exp.categoryId);
+      if (cat) {
+        grouped[exp.date].cats.add(cat.name);
+      }
     }
 
-    return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
+    return Object.values(grouped).map(g => {
+      return {
+        date: g.date,
+        amount: g.amount,
+        count: g.count,
+        categoryNames: Array.from(g.cats).join(', ')
+      };
+    }).sort((a, b) => a.date.localeCompare(b.date));
   },
 
   async getCategoryBreakdown(from: string, to: string): Promise<CategoryBreakdown[]> {
