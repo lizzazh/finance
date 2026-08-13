@@ -120,7 +120,9 @@ export const balanceService = {
       nextIncomeDate = upcoming[0]?.nextDate ?? null;
     }
 
-    const periodEnd = nextIncomeDate ?? todayStr;
+    // If there is no future income, all future planned expenses must be covered by current balance.
+    // If there IS a future income, we only deduct expenses up to that income date.
+    const periodEnd = nextIncomeDate ?? '9999-12-31';
 
     // Planned expenses within period (date <= nextIncomeDate)
     const plannedExpenses = await db.expenses
