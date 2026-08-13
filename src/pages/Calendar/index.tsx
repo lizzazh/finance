@@ -319,8 +319,8 @@ export default function CalendarPage() {
                   {dayEvs.length > 0 && (
                     <div className="calendar-dots">
                       {incTotal > 0 && <span className="dot dot-income" />}
-                      {hasCompleted && <span className="dot dot-expense" />}
-                      {hasPlanned && <span className="dot" style={{background:'var(--color-warning,#f59e0b)'}} />}
+                      {hasCompleted && <span className="dot" style={{background:'#3b82f6'}} />}
+                      {hasPlanned && <span className="dot dot-expense" />}
                     </div>
                   )}
                 </div>
