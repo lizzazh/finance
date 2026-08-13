@@ -265,7 +265,7 @@ export default function CalendarPage() {
   return (
     <div className="max-w-4xl mx-auto flex flex-col gap-6">
       {/* Header */}
-      <header className="flex justify-between items-center">
+      <header className="sticky-header flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Календарь</h1>
           <p className="text-sm text-secondary">Обзор доходов и расходов по дням</p>
@@ -305,6 +305,8 @@ export default function CalendarPage() {
 
             const incTotal = dayEvs.filter((e) => e.type === 'income').reduce((sum, e) => sum + e.amount, 0);
             const expTotal = dayEvs.filter((e) => e.type === 'expense' || e.type === 'planned').reduce((sum, e) => sum + e.amount, 0);
+            const hasCompleted = dayEvs.some((e) => e.type === 'expense');
+            const hasPlanned = dayEvs.some((e) => e.type === 'planned');
 
             return (
               <div
@@ -317,7 +319,8 @@ export default function CalendarPage() {
                   {dayEvs.length > 0 && (
                     <div className="calendar-dots">
                       {incTotal > 0 && <span className="dot dot-income" />}
-                      {expTotal > 0 && <span className="dot dot-expense" />}
+                      {hasCompleted && <span className="dot dot-expense" />}
+                      {hasPlanned && <span className="dot" style={{background:'var(--color-warning,#f59e0b)'}} />}
                     </div>
                   )}
                 </div>
@@ -380,11 +383,11 @@ export default function CalendarPage() {
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 ${ev.type === 'income' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40' : ev.type === 'planned' ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/40' : 'bg-red-50 text-red-600 dark:bg-red-950/40'}`}>
                     {ev.icon}
                   </div>
-                  <div className="min-w-0">
-                    <div className="font-bold text-sm truncate">{ev.name}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-sm">{ev.name}</div>
                     <div className="text-xs text-secondary flex items-center gap-1">
                       {ev.type === 'planned' && <Clock size={12} className="text-amber-500" />}
-                      <span>{ev.type === 'income' ? 'Доход' : ev.type === 'planned' ? 'Запланировано' : 'Расход'}</span>
+                      <span>{ev.type === 'income' ? 'Доход' : ev.type === 'planned' ? 'Запланировано' : 'Оплачено'}</span>
                     </div>
                   </div>
                 </div>

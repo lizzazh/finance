@@ -73,7 +73,7 @@ export default function Expenses() {
 
   return (
     <div className="max-w-4xl mx-auto flex flex-col gap-6">
-      <header className="flex justify-between items-center">
+      <header className="sticky-header flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Расходы</h1>
           <p className="text-sm text-secondary">Управление разовыми и регулярными расходами</p>
@@ -126,9 +126,9 @@ export default function Expenses() {
                         <div className="w-10 h-10 rounded-xl bg-primary-muted flex items-center justify-center text-xl shrink-0">
                           {cat?.icon || '📦'}
                         </div>
-                        <div className="min-w-0">
-                          <div className="font-bold text-sm truncate">{cat?.name || 'Без категории'}</div>
-                          {exp.description && <div className="text-xs text-secondary truncate">{exp.description}</div>}
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-sm">{cat?.name || 'Без категории'}</div>
+                          {exp.description && <div className="text-xs text-secondary">{exp.description}</div>}
                         </div>
                       </div>
 

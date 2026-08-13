@@ -94,7 +94,7 @@ export default function Analytics() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
+      <div className="sticky-header">
         <h1 className="page-title">Аналитика</h1>
         <div className="period-tabs">
           {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (

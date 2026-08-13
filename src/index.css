@@ -84,6 +84,19 @@ body.modal-open {
   }
 }
 
+/* Sticky page header - prevents content from showing behind iOS status bar */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--color-bg);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  padding: 0.75rem 0;
+  margin: -0.25rem 0 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
 /* Navigation */
 .side-nav {
   display: none;

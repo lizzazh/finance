@@ -41,7 +41,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto">
-      <header className="flex justify-between items-center">
+      <header className="sticky-header flex justify-between items-center">
         <h1 className="text-xl font-bold capitalize">{toDisplayMonth(today())}</h1>
       </header>
 
@@ -126,10 +126,13 @@ export default function Dashboard() {
                 <BarChart data={chartData}>
                   <XAxis dataKey="date" hide />
                   <Tooltip 
-                    formatter={(value: any) => formatAmount(Number(value), currentBalance.baseCurrency)}
+                    formatter={(value: any, _name: any, props: any) => [
+                      formatAmount(Number(value), currentBalance.baseCurrency),
+                      props?.payload?.categoryName || 'Расходы'
+                    ]}
                     labelFormatter={(label: any) => toDisplayDate(String(label), 'short')}
                   />
-                  <Bar dataKey="amount" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="amount" fill="var(--color-primary)" radius={[4, 4, 0, 0]} name="Расходы" />
                 </BarChart>
               </ResponsiveContainer>
             </div>

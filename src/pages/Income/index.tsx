@@ -64,7 +64,7 @@ export default function Income() {
 
   return (
     <div className="max-w-4xl mx-auto flex flex-col gap-6">
-      <header className="flex justify-between items-center">
+      <header className="sticky-header flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Доходы</h1>
           <p className="text-sm text-secondary">Управление поступившими и ожидаемыми доходами</p>

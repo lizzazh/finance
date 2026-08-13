@@ -96,7 +96,7 @@ export default function Recurring() {
 
   return (
     <div className="max-w-4xl mx-auto flex flex-col gap-8">
-      <header className="flex justify-between items-center">
+      <header className="sticky-header flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Постоянные платежи</h1>
           <p className="text-sm text-secondary">Управление регулярными расходами и доходами</p>
@@ -124,15 +124,22 @@ export default function Recurring() {
           <div className="flex flex-col gap-3">
             {plannedExpenses.map((exp) => (
               <div key={exp.id} className="card flex items-center justify-between gap-4 p-4 border-l-4 border-amber-500">
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="font-bold">{exp.description || 'Регулярный расход'}</div>
                   <div className="text-xs text-secondary mt-1">
                     Дата: <span className="font-medium text-text">{toDisplayDate(exp.date, 'long')}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="font-bold text-expense text-right">
-                    −{formatAmount(exp.amount, exp.currency)}
+                <div className="flex items-center gap-4 shrink-0">
+                  <div className="text-right">
+                    <div className="font-bold text-expense">
+                      −{formatAmount(exp.amount, exp.currency)}
+                    </div>
+                    {exp.currency !== baseCurrency && ratesMap[exp.currency] && (
+                      <div className="text-xs text-secondary mt-0.5">
+                        ≈ {formatAmount(currencyService.convert(exp.amount, ratesMap[exp.currency]), baseCurrency)}
+                      </div>
+                    )}
                   </div>
                   <button
                     className="btn-primary py-1.5 px-3 text-xs bg-emerald-600 hover:bg-emerald-700"
