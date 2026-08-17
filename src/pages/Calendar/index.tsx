@@ -335,9 +335,10 @@ export default function CalendarPage() {
             const isSelected = dateStr === selectedDate;
 
             const incTotal = dayEvs.filter((e) => e.type === 'income').reduce((sum, e) => sum + e.amount, 0);
-            const expTotal = dayEvs.filter((e) => e.type === 'expense' || e.type === 'planned').reduce((sum, e) => sum + e.amount, 0);
-            const hasCompleted = dayEvs.some((e) => e.type === 'expense');
-            const hasPlanned = dayEvs.some((e) => e.type === 'planned');
+            const completedExpTotal = dayEvs.filter((e) => e.type === 'expense').reduce((sum, e) => sum + e.amount, 0);
+            const plannedExpTotal = dayEvs.filter((e) => e.type === 'planned').reduce((sum, e) => sum + e.amount, 0);
+            const hasCompleted = completedExpTotal > 0;
+            const hasPlanned = plannedExpTotal > 0;
 
             return (
               <div
@@ -361,8 +362,11 @@ export default function CalendarPage() {
                   {incTotal > 0 && (
                     <span className="text-emerald-600 font-medium truncate">+{Math.round(incTotal)}</span>
                   )}
-                  {expTotal > 0 && (
-                    <span className="text-red-500 font-medium truncate">−{Math.round(expTotal)}</span>
+                  {completedExpTotal > 0 && (
+                    <span className="text-blue-500 font-medium truncate">{Math.round(completedExpTotal)}</span>
+                  )}
+                  {plannedExpTotal > 0 && (
+                    <span className="text-red-500 font-medium truncate">−{Math.round(plannedExpTotal)}</span>
                   )}
                 </div>
               </div>
