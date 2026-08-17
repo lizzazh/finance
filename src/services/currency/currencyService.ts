@@ -58,12 +58,15 @@ export const currencyService = {
     if (reverseCached !== null && reverseCached > 0) return 1 / reverseCached;
 
     // 3. Try fetching live rates (via NBUProvider with CORS proxy & fallbacks)
-    try {
-      await currencyService.refreshRates();
-      const fresh = await currencyService.getRateForDate(from, to, today());
-      if (fresh !== null && fresh > 0) return fresh;
-    } catch {
-      // network / API offline — continue
+    const rateMode = await db.settings.get('currencyRateMode');
+    if (rateMode?.value !== 'manual') {
+      try {
+        await currencyService.refreshRates();
+        const fresh = await currencyService.getRateForDate(from, to, today());
+        if (fresh !== null && fresh > 0) return fresh;
+      } catch {
+        // network / API offline — continue
+      }
     }
 
     // 4. Try any cached rate regardless of date
@@ -136,6 +139,9 @@ export const currencyService = {
   // ── Refresh from provider ────────────────────────────────────────────────
 
   async refreshRates(baseCurrency?: CurrencyCode): Promise<void> {
+    const rateMode = await db.settings.get('currencyRateMode');
+    if (rateMode?.value === 'manual') return;
+
     const base =
       baseCurrency ??
       (((await db.settings.get('baseCurrency'))?.value as string) || 'UAH');

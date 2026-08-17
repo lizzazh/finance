@@ -24,12 +24,13 @@ export function ManualRatesManager({ baseCurrency }: ManualRatesManagerProps) {
       const recExp = await db.recurringExpenses.toArray();
       const recInc = await db.recurringIncomes.toArray();
 
-      const used = new Set<string>();
+      const used = new Set<string>(['USD', 'EUR', 'PLN', 'GBP']);
       [...expenses, ...incomes, ...savings, ...recExp, ...recInc].forEach(item => {
         if (item.currency && item.currency !== baseCurrency) {
           used.add(item.currency);
         }
       });
+      used.delete(baseCurrency);
 
       const usedArr = Array.from(used) as CurrencyCode[];
       setCurrencies(usedArr);
