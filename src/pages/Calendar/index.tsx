@@ -7,6 +7,8 @@ import { formatAmount } from '../../utils/format';
 import { AddExpenseModal } from '../../components/expenses/AddExpenseModal';
 import { AddIncomeModal } from '../../components/incomes/AddIncomeModal';
 import type { Expense, Income, SavingsTransaction } from '../../types';
+import { currencyService } from '../../services/currency/currencyService';
+import { generateId } from '../../utils/id';
 
 interface CalendarEvent {
   id: string;
@@ -247,11 +249,69 @@ export default function CalendarPage() {
   }
 
   async function handleMarkAsPaid(ev: CalendarEvent) {
+    const now = new Date().toISOString();
+    
     if (ev.sourceType === 'expense' && ev.rawExpense) {
       await expensesRepo.update(ev.rawExpense.id, {
         status: 'completed',
-        updatedAt: new Date().toISOString()
+        updatedAt: now
       });
+      loadEvents();
+    } else if (ev.sourceType === 'income' && ev.rawIncome && ev.rawIncome.status === 'pending') {
+      await incomesRepo.update(ev.rawIncome.id, {
+        status: 'received',
+        updatedAt: now
+      });
+      loadEvents();
+    } else if (ev.rawRecurringExpense) {
+      const re = ev.rawRecurringExpense;
+      const baseCurrencySetting = await db.settings.get('baseCurrency');
+      const baseCurrency = (baseCurrencySetting?.value as string) || 'UAH';
+      const exchangeRate = await currencyService.getRateForDate(re.currency, baseCurrency, ev.date) ?? 1;
+      
+      const newExp: Expense = {
+        id: generateId(),
+        amount: re.amount,
+        currency: re.currency,
+        baseAmount: Math.round(re.amount * exchangeRate * 100) / 100,
+        baseCurrency,
+        exchangeRate,
+        categoryId: re.categoryId,
+        description: re.name,
+        date: ev.date,
+        status: 'completed',
+        amountMode: re.amountMode,
+        percentageIncomeId: re.percentageIncomeId,
+        percentageValue: re.percentageValue,
+        recurringExpenseId: re.id,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await expensesRepo.add(newExp);
+      loadEvents();
+    } else if (ev.rawRecurringIncome) {
+      const ri = ev.rawRecurringIncome;
+      const baseCurrencySetting = await db.settings.get('baseCurrency');
+      const baseCurrency = (baseCurrencySetting?.value as string) || 'UAH';
+      const exchangeRate = await currencyService.getRateForDate(ri.currency, baseCurrency, ev.date) ?? 1;
+      
+      const newInc: Income = {
+        id: generateId(),
+        amount: ri.amount,
+        currency: ri.currency,
+        baseAmount: Math.round(ri.amount * exchangeRate * 100) / 100,
+        baseCurrency,
+        exchangeRate,
+        name: ri.name,
+        date: ev.date,
+        status: 'received',
+        isRecurring: true,
+        recurringIncomeId: ri.id,
+        savingsApplied: false,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await incomesRepo.add(newInc);
       loadEvents();
     }
   }
@@ -458,11 +518,14 @@ export default function CalendarPage() {
 
                   {(ev.rawExpense || ev.rawIncome || ev.rawRecurringExpense || ev.rawRecurringIncome) && (
                     <div className="flex items-center gap-1">
-                      {ev.type === 'planned' && ev.rawExpense && (
+                      {((ev.type === 'planned' && ev.rawExpense) || 
+                        ev.rawRecurringExpense || 
+                        ev.rawRecurringIncome || 
+                        (ev.sourceType === 'income' && ev.rawIncome?.status === 'pending')) && (
                         <button
                           className="p-1.5 rounded-lg border border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all mr-1"
                           onClick={() => handleMarkAsPaid(ev)}
-                          title="Отметить как оплачено"
+                          title="Отметить как выполненное"
                         >
                           <Check size={15} />
                         </button>
