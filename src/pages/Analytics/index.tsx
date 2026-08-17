@@ -120,7 +120,7 @@ export default function Analytics() {
           {[1, 2, 3, 4].map((i) => <div key={i} className="skeleton-card" />)}
         </div>
       ) : (
-        <>
+        <div className="flex flex-col gap-6">
           {/* Summary Cards */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div className="card bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/30 p-3">
@@ -232,7 +232,7 @@ export default function Analytics() {
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
