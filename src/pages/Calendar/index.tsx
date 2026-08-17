@@ -19,7 +19,9 @@ interface CalendarEvent {
   icon: string;
   rawExpense?: Expense;
   rawIncome?: Income;
-  rawSavings?: any; // any to avoid importing SavingsTransaction if not needed, wait, let's use SavingsTransaction
+  rawSavings?: any;
+  rawRecurringExpense?: any;
+  rawRecurringIncome?: any;
 }
 
 export default function CalendarPage() {
@@ -141,6 +143,7 @@ export default function CalendarPage() {
             amount: re.amount,
             currency: re.currency,
             icon: cat?.icon || '📋',
+            rawRecurringExpense: re,
           });
         }
 
@@ -183,6 +186,7 @@ export default function CalendarPage() {
             amount: ri.amount,
             currency: ri.currency,
             icon: '🗓',
+            rawRecurringIncome: ri,
           });
         }
 
@@ -227,6 +231,16 @@ export default function CalendarPage() {
     } else if (ev.sourceType === 'savings' && ev.rawSavings) {
       if (window.confirm('Удалить это накопление?')) {
         await db.savingsTransactions.delete(ev.rawSavings.id);
+        loadEvents();
+      }
+    } else if (ev.rawRecurringExpense) {
+      if (window.confirm('Это регулярный шаблон расхода. Удалить этот шаблон и остановить будущие повторения?')) {
+        await recurringExpensesRepo.delete(ev.rawRecurringExpense.id);
+        loadEvents();
+      }
+    } else if (ev.rawRecurringIncome) {
+      if (window.confirm('Это регулярный шаблон дохода. Удалить этот шаблон и остановить будущие повторения?')) {
+        await recurringIncomesRepo.delete(ev.rawRecurringIncome.id);
         loadEvents();
       }
     }
@@ -442,7 +456,7 @@ export default function CalendarPage() {
                     {ev.type === 'income' ? '+' : '−'}{formatAmount(ev.amount, ev.currency)}
                   </div>
 
-                  {(ev.rawExpense || ev.rawIncome) && (
+                  {(ev.rawExpense || ev.rawIncome || ev.rawRecurringExpense || ev.rawRecurringIncome) && (
                     <div className="flex items-center gap-1">
                       {ev.type === 'planned' && ev.rawExpense && (
                         <button
@@ -453,13 +467,15 @@ export default function CalendarPage() {
                           <Check size={15} />
                         </button>
                       )}
-                      <button
-                        className="p-1.5 rounded-lg border border-border text-secondary hover:text-primary transition-all"
-                        onClick={() => handleEditEvent(ev)}
-                        title="Редактировать"
-                      >
-                        <Pencil size={15} />
-                      </button>
+                      {(ev.rawExpense || ev.rawIncome) && (
+                        <button
+                          className="p-1.5 rounded-lg border border-border text-secondary hover:text-primary transition-all"
+                          onClick={() => handleEditEvent(ev)}
+                          title="Редактировать"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                      )}
                       <button
                         className="p-1.5 rounded-lg border border-border text-secondary hover:text-red-600 transition-all"
                         onClick={() => handleDeleteEvent(ev)}
