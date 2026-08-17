@@ -10,7 +10,8 @@ import { currencyService } from '../../services/currency/currencyService';
 import { db } from '../../db/database';
 import { generateId } from '../../utils/id';
 import { today } from '../../utils/date';
-import type { ThemeMode } from '../../types';
+import type { ThemeMode, CurrencyCode } from '../../types';
+import { ManualRatesManager } from './ManualRatesManager';
 
 export default function SettingsPage() {
   const { settings, updateSetting } = useSettings();
@@ -235,6 +236,9 @@ export default function SettingsPage() {
               )}
             </div>
           </div>
+          {settings.currencyRateMode === 'manual' && (
+            <ManualRatesManager baseCurrency={settings.baseCurrency as CurrencyCode} />
+          )}
         </div>
       </section>
 

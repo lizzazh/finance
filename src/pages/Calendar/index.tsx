@@ -6,19 +6,20 @@ import { toDisplayDate, toDisplayMonth, startOfMonth, endOfMonth, today, getNext
 import { formatAmount } from '../../utils/format';
 import { AddExpenseModal } from '../../components/expenses/AddExpenseModal';
 import { AddIncomeModal } from '../../components/incomes/AddIncomeModal';
-import type { Expense, Income } from '../../types';
+import type { Expense, Income, SavingsTransaction } from '../../types';
 
 interface CalendarEvent {
   id: string;
-  sourceType: 'expense' | 'income';
+  sourceType: 'expense' | 'income' | 'savings';
   date: string;
-  type: 'income' | 'expense' | 'planned';
+  type: 'income' | 'expense' | 'planned' | 'savings';
   name: string;
   amount: number;
   currency: string;
   icon: string;
   rawExpense?: Expense;
   rawIncome?: Income;
+  rawSavings?: any; // any to avoid importing SavingsTransaction if not needed, wait, let's use SavingsTransaction
 }
 
 export default function CalendarPage() {
@@ -32,6 +33,7 @@ export default function CalendarPage() {
   const [incomeModalOpen, setIncomeModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [editingIncome, setEditingIncome] = useState<Income | null>(null);
+  const [editingSavings, setEditingSavings] = useState<SavingsTransaction | null>(null);
 
   const monthStart = startOfMonth(currentMonth + '-01');
   const monthEnd = endOfMonth(currentMonth + '-01');
@@ -42,12 +44,13 @@ export default function CalendarPage() {
 
   async function loadEvents() {
     setLoading(true);
-    const [expenses, incomes, recurringIncomes, recurringExpenses, categories] = await Promise.all([
-      db.expenses.where('date').between(monthStart, monthEnd, true, true).toArray(),
-      db.incomes.where('date').between(monthStart, monthEnd, true, true).toArray(),
-      recurringIncomesRepo.getActive(),
-      recurringExpensesRepo.getActive(),
+    const [expenses, incomes, recurringIncomes, recurringExpenses, categories, savings] = await Promise.all([
+      expensesRepo.getByDateRange(monthStart, monthEnd),
+      incomesRepo.getByDateRange(monthStart, monthEnd),
+      recurringIncomesRepo.getAll(),
+      recurringExpensesRepo.getAll(),
       db.categories.toArray(),
+      db.savingsTransactions.where('date').between(monthStart, monthEnd, true, true).toArray(),
     ]);
 
     const catMap = new Map(categories.map((c) => [c.id, c]));
@@ -87,6 +90,21 @@ export default function CalendarPage() {
         currency: inc.currency,
         icon: '💰',
         rawIncome: inc,
+      });
+    }
+
+    // 2.5 Database Savings
+    for (const sav of savings) {
+      addEv(sav.date, {
+        id: sav.id,
+        sourceType: 'savings',
+        date: sav.date,
+        type: 'savings',
+        name: 'Накопление',
+        amount: sav.amount,
+        currency: sav.currency,
+        icon: '🐷',
+        rawSavings: sav,
       });
     }
 
@@ -206,21 +224,32 @@ export default function CalendarPage() {
         await incomesRepo.delete(ev.rawIncome.id);
         loadEvents();
       }
+    } else if (ev.sourceType === 'savings' && ev.rawSavings) {
+      if (window.confirm('Удалить это накопление?')) {
+        await db.savingsTransactions.delete(ev.rawSavings.id);
+        loadEvents();
+      }
     }
   }
 
   function handleEditEvent(ev: CalendarEvent) {
     if (ev.sourceType === 'expense' && ev.rawExpense) {
       setEditingExpense(ev.rawExpense);
+      setEditingSavings(null);
       setExpenseModalOpen(true);
     } else if (ev.sourceType === 'income' && ev.rawIncome) {
       setEditingIncome(ev.rawIncome);
       setIncomeModalOpen(true);
+    } else if (ev.sourceType === 'savings' && ev.rawSavings) {
+      setEditingSavings(ev.rawSavings);
+      setEditingExpense(null);
+      setExpenseModalOpen(true);
     }
   }
 
   function handleAddExpenseForDate() {
     setEditingExpense(null);
+    setEditingSavings(null);
     setExpenseModalOpen(true);
   }
 
@@ -242,6 +271,7 @@ export default function CalendarPage() {
 
   function handleCloseExpenseModal() {
     setEditingExpense(null);
+    setEditingSavings(null);
     setExpenseModalOpen(false);
   }
 
@@ -252,6 +282,7 @@ export default function CalendarPage() {
 
   function handleExpenseSaved() {
     setEditingExpense(null);
+    setEditingSavings(null);
     loadEvents();
   }
 
@@ -426,6 +457,7 @@ export default function CalendarPage() {
       <AddExpenseModal
         open={expenseModalOpen}
         initialExpense={editingExpense}
+        initialSavings={editingSavings}
         initialDate={selectedDate}
         onClose={handleCloseExpenseModal}
         onSaved={handleExpenseSaved}

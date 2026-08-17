@@ -9,7 +9,7 @@ import { today, getNextRecurringDate } from '../../utils/date';
 import { useSettings } from '../../hooks/useSettings';
 import { recurringExpensesService } from '../../services/recurringExpenses';
 import { CustomReminderPicker, parseReminderOffset, formatReminderConfig } from '../ui/CustomReminderPicker';
-import type { Category, CurrencyCode, ExpenseStatus, IncomeFrequency, Expense, ReminderOffset } from '../../types';
+import type { Category, CurrencyCode, ExpenseStatus, IncomeFrequency, Expense, ReminderOffset, SavingsTransaction } from '../../types';
 import { formatAmount } from '../../utils/format';
 
 interface AddExpenseModalProps {
@@ -17,10 +17,11 @@ interface AddExpenseModalProps {
   onClose: () => void;
   onSaved?: () => void;
   initialExpense?: Expense | null;
+  initialSavings?: SavingsTransaction | null;
   initialDate?: string;
 }
 
-export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initialDate }: AddExpenseModalProps) {
+export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initialSavings, initialDate }: AddExpenseModalProps) {
   const { settings } = useSettings();
   const [amountStr, setAmountStr] = useState('');
   const [currency, setCurrency] = useState<CurrencyCode>('UAH');
@@ -54,13 +55,30 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
 
   const baseCurrency = settings?.baseCurrency || 'UAH';
 
-  const isEditing = !!initialExpense;
+  const isEditing = !!initialExpense || !!initialSavings;
 
   useEffect(() => {
     if (open) {
       document.body.classList.add('modal-open');
-      if (initialExpense) {
-        setAmountStr(String(initialExpense.amount));
+
+      if (initialSavings) {
+        setRecordType('savings');
+        setAmountStr(initialSavings.amount.toString());
+        setCurrency(initialSavings.currency);
+        setDate(initialSavings.date);
+        
+        if (initialSavings.ruleType === 'percentage') {
+          setAmountMode('percentage_of_income');
+          setPercentageValueStr(initialSavings.ruleValue.toString());
+          if (initialSavings.incomeId !== 'manual') {
+            setSelectedIncomeId(initialSavings.incomeId);
+          }
+        } else {
+          setAmountMode('fixed');
+        }
+      } else if (initialExpense) {
+        setRecordType('expense');
+        setAmountStr(initialExpense.amount.toString());
         setCurrency(initialExpense.currency);
         setDate(initialExpense.date);
         setCategoryId(initialExpense.categoryId);
@@ -126,7 +144,7 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
     return () => {
       document.body.classList.remove('modal-open');
     };
-  }, [open, settings, initialExpense, initialDate]);
+  }, [open, settings, initialExpense, initialSavings, initialDate]);
 
   function toDisplayDateShort(d: string): string {
     const [, m, day] = d.split('-');
@@ -201,21 +219,35 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
       const now = new Date().toISOString();
 
       if (recordType === 'savings') {
-        // Save as savings transaction
-        await db.savingsTransactions.add({
-          id: generateId(),
-          incomeId: 'manual', // Identifier for manual savings
-          amount,
-          currency,
-          exchangeRate: snapshot.exchangeRate,
-          baseAmount: snapshot.baseAmount,
-          baseCurrency: snapshot.baseCurrency,
-          ruleId: 'manual',
-          ruleType: 'fixed',
-          ruleValue: amount,
-          date,
-          createdAt: now
-        });
+        if (isEditing && initialSavings) {
+          await db.savingsTransactions.update(initialSavings.id, {
+            amount,
+            currency,
+            exchangeRate: snapshot.exchangeRate,
+            baseAmount: snapshot.baseAmount,
+            baseCurrency: snapshot.baseCurrency,
+            date,
+            ruleType: amountMode === 'percentage_of_income' ? 'percentage' : 'fixed',
+            ruleValue: amountMode === 'percentage_of_income' ? parseFloat(percentageValueStr) : amount,
+            incomeId: amountMode === 'percentage_of_income' ? selectedIncomeId : 'manual',
+          });
+        } else {
+          // Save as savings transaction
+          await db.savingsTransactions.add({
+            id: generateId(),
+            incomeId: amountMode === 'percentage_of_income' ? selectedIncomeId : 'manual',
+            amount,
+            currency,
+            exchangeRate: snapshot.exchangeRate,
+            baseAmount: snapshot.baseAmount,
+            baseCurrency: snapshot.baseCurrency,
+            ruleId: 'manual',
+            ruleType: amountMode === 'percentage_of_income' ? 'percentage' : 'fixed',
+            ruleValue: amountMode === 'percentage_of_income' ? parseFloat(percentageValueStr) : amount,
+            date,
+            createdAt: now
+          });
+        }
         
         onSaved?.();
         onClose();
@@ -247,6 +279,28 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
             reminderOffset,
             updatedAt: now,
           });
+
+          // Update all PLANNED expenses linked to this recurring template
+          const existingExpenses = await db.expenses.where('recurringExpenseId').equals(recurringExpenseId).toArray();
+          for (const exp of existingExpenses) {
+            if (exp.status === 'planned') {
+              const expSnapshot = await currencyService.buildSnapshot(amount, currency, baseCurrency, exp.date);
+              await expensesRepo.update(exp.id, {
+                amount,
+                currency,
+                exchangeRate: expSnapshot.exchangeRate,
+                baseAmount: expSnapshot.baseAmount,
+                baseCurrency: expSnapshot.baseCurrency,
+                categoryId,
+                description: description.trim() || categories.find((c) => c.id === categoryId)?.name || 'Постоянный расход',
+                amountMode,
+                percentageIncomeId: amountMode === 'percentage_of_income' ? selectedIncomeId : undefined,
+                percentageValue: amountMode === 'percentage_of_income' ? parseFloat(percentageValueStr) : undefined,
+                reminderOffset,
+                updatedAt: now,
+              });
+            }
+          }
         } else {
           recurringExpenseId = generateId();
           await recurringExpensesRepo.add({
@@ -358,11 +412,9 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
 
         {/* Scrollable Body */}
         <div className="modal-body">
-          {recordType === 'expense' && (
-            <>
-              {/* Amount Calculation Mode Toggle */}
-              <div className="form-group">
-                <label className="label">Способ расчёта суммы</label>
+          {/* Amount Calculation Mode Toggle (for both) */}
+          <div className="form-group">
+            <label className="label">Способ расчёта суммы</label>
             <div className="segmented-control">
               <button
                 type="button"
@@ -433,13 +485,11 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
               )}
             </div>
           )}
-          </>
-          )}
 
           {/* Amount Input (shown for both) */}
           <div className="form-group">
             <AmountInput
-              label={recordType === 'expense' && amountMode === 'percentage_of_income' ? 'Рассчитанная сумма расхода' : 'Сумма'}
+              label={amountMode === 'percentage_of_income' ? 'Рассчитанная сумма' : 'Сумма'}
               amount={amountStr}
               currency={currency}
               baseCurrency={baseCurrency}
@@ -449,7 +499,9 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
             />
           </div>
 
-          {/* Category Grid */}
+          {recordType === 'expense' && (
+            <>
+              {/* Expense Type Toggle */}
           <div className="form-group">
             <label className="label">Категория</label>
             <div className="category-grid">
@@ -636,6 +688,8 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
                 onChange={(cfg) => setReminderOffset(formatReminderConfig(cfg))}
               />
             </div>
+          )}
+            </>
           )}
 
           {/* Description */}

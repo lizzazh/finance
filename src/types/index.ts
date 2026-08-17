@@ -224,6 +224,7 @@ export interface Forecast {
 export interface DashboardData {
   currentBalance: CurrentBalance;
   availableBalance: number;
+  availableAfterSavings: number;
   dailyLimit: number;
   monthlyExpenses: number;
   monthlyIncome: number;

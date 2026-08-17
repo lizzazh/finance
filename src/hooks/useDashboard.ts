@@ -19,8 +19,9 @@ export function useDashboard() {
     try {
       setLoading(true);
       const currentDate = today();
-      const monthStart = startOfMonth(currentDate);
-      const monthEnd = endOfMonth(currentDate);
+      const period = await incomePeriodService.getCurrentPeriod();
+      const monthStart = period?.startDate || startOfMonth(currentDate);
+      const monthEnd = period?.endDate || endOfMonth(currentDate);
 
       const baseCurrencySetting = await db.settings.get('baseCurrency');
       const baseCurrency = (baseCurrencySetting?.value as string) || 'UAH';
@@ -30,7 +31,6 @@ export function useDashboard() {
       const [
         currentBalance,
         limitData,
-        period,
         forecast,
         monthlyExpenses,
         monthlyIncome,
@@ -40,7 +40,6 @@ export function useDashboard() {
       ] = await Promise.all([
         balanceService.currentBalance(),
         dailyLimitCalculator.calculate(),
-        incomePeriodService.getCurrentPeriod(),
         forecastCalculator.getForecast(),
         analyticsService.getTotalExpenses(monthStart, monthEnd),
         analyticsService.getTotalIncome(monthStart, monthEnd),
@@ -99,6 +98,7 @@ export function useDashboard() {
       setData({
         currentBalance,
         availableBalance: limitData.availableBalance,
+        availableAfterSavings: limitData.availableBalance - (forecast?.plannedSavings || 0),
         dailyLimit: limitData.dailyLimit,
         monthlyExpenses,
         monthlyIncome,

@@ -4,6 +4,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import { analyticsService } from '../../services/analytics';
+import { incomePeriodService } from '../../services/incomePeriod';
 import type { DailyExpense, CategoryBreakdown, MonthlyComparison } from '../../types';
 import { startOfMonth, endOfMonth, today } from '../../utils/date';
 import { db } from '../../db/database';
@@ -47,18 +48,7 @@ export default function Analytics() {
   const [baseCurrency, setBaseCurrency] = useState('UAH');
   const [loading, setLoading] = useState(true);
 
-  const getDateRange = useCallback((): [string, string] => {
-    const t = today();
-    const monthStart = startOfMonth(t);
-    const monthEnd = endOfMonth(t);
-    if (period === 'month') return [monthStart, monthEnd];
-    const months = period === '3months' ? 3 : period === '6months' ? 6 : 12;
-    const start = new Date();
-    start.setMonth(start.getMonth() - months + 1);
-    start.setDate(1);
-    const startStr = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-01`;
-    return [startStr, monthEnd];
-  }, [period]);
+  // getDateRange will now be handled inside loadData because it's async
 
   useEffect(() => {
     loadData();
@@ -66,7 +56,23 @@ export default function Analytics() {
 
   async function loadData() {
     setLoading(true);
-    const [from, to] = getDateRange();
+    
+    let from: string, to: string;
+    const t = today();
+    const monthEnd = endOfMonth(t);
+    
+    if (period === 'month') {
+      const p = await incomePeriodService.getCurrentPeriod();
+      from = p?.startDate || startOfMonth(t);
+      to = p?.endDate || monthEnd;
+    } else {
+      const months = period === '3months' ? 3 : period === '6months' ? 6 : 12;
+      const start = new Date();
+      start.setMonth(start.getMonth() - months + 1);
+      start.setDate(1);
+      from = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-01`;
+      to = monthEnd;
+    }
 
     const bc = ((await db.settings.get('baseCurrency'))?.value as string) || 'UAH';
     setBaseCurrency(bc);
@@ -116,22 +122,22 @@ export default function Analytics() {
       ) : (
         <>
           {/* Summary Cards */}
-          <div className="analytics-summary">
-            <div className="card analytics-stat">
-              <div className="analytics-stat-label">Доходы</div>
-              <div className="analytics-stat-value positive">+{totals.income.toLocaleString('ru-RU')} {currencySymbol}</div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="card bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/30">
+              <div className="text-xs font-medium text-emerald-800 dark:text-emerald-400 mb-1">Доходы</div>
+              <div className="text-xl font-bold text-emerald-600 dark:text-emerald-500">+{totals.income.toLocaleString('ru-RU')} {currencySymbol}</div>
             </div>
-            <div className="card analytics-stat">
-              <div className="analytics-stat-label">Расходы</div>
-              <div className="analytics-stat-value negative">−{totals.expenses.toLocaleString('ru-RU')} {currencySymbol}</div>
+            <div className="card bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/30">
+              <div className="text-xs font-medium text-amber-800 dark:text-amber-400 mb-1">Расходы</div>
+              <div className="text-xl font-bold text-amber-600 dark:text-amber-500">−{totals.expenses.toLocaleString('ru-RU')} {currencySymbol}</div>
             </div>
-            <div className="card analytics-stat">
-              <div className="analytics-stat-label">Накопления</div>
-              <div className="analytics-stat-value savings">{totals.savings.toLocaleString('ru-RU')} {currencySymbol}</div>
+            <div className="card bg-indigo-50 dark:bg-indigo-900/20 border-indigo-100 dark:border-indigo-800/30">
+              <div className="text-xs font-medium text-indigo-800 dark:text-indigo-400 mb-1">Накопления</div>
+              <div className="text-xl font-bold text-indigo-600 dark:text-indigo-500">{totals.savings.toLocaleString('ru-RU')} {currencySymbol}</div>
             </div>
-            <div className="card analytics-stat">
-              <div className="analytics-stat-label">В день (среднее)</div>
-              <div className="analytics-stat-value">{totals.avg.toLocaleString('ru-RU')} {currencySymbol}</div>
+            <div className="card bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700">
+              <div className="text-xs font-medium text-secondary mb-1">В день (среднее)</div>
+              <div className="text-xl font-bold">{totals.avg.toLocaleString('ru-RU')} {currencySymbol}</div>
             </div>
           </div>
 

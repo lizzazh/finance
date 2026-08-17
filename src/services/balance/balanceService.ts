@@ -24,10 +24,11 @@ export const balanceService = {
     const baseCurrency: CurrencyCode =
       (baseCurrencySetting?.value as string) || 'UAH';
 
-    const [adjustments, incomes, expenses] = await Promise.all([
+    const [adjustments, incomes, expenses, savings] = await Promise.all([
       db.balanceAdjustments.toArray(),
       db.incomes.toArray(),
       db.expenses.where('status').equals('completed').toArray(),
+      db.savingsTransactions.toArray(),
     ]);
 
     const byCurrency: Record<string, number> = {};
@@ -73,6 +74,11 @@ export const balanceService = {
     // Completed expenses (subtract)
     for (const exp of expenses) {
       await addAmount(-exp.amount, exp.currency, exp.exchangeRate, exp.date);
+    }
+
+    // Savings (subtract, since money went to the piggy bank)
+    for (const sav of savings) {
+      await addAmount(-sav.amount, sav.currency, sav.exchangeRate, sav.date);
     }
 
     // Round total
@@ -147,30 +153,7 @@ export const balanceService = {
       }
     }
 
-    // Savings from incomes in current period
-    // Period start: beginning of current month (or last income date)
-    // For MVP: savings for incomes with date <= today
-    const savingsInPeriod = await db.savingsTransactions
-      .filter((s) => s.date <= todayStr)
-      .toArray();
-
-    let savingsDeduction = 0;
-    for (const sav of savingsInPeriod) {
-      if (sav.currency === baseCurrency) {
-        savingsDeduction += sav.amount;
-      } else {
-        const rate = await currencyService.getRateForDate(
-          sav.currency,
-          baseCurrency,
-          sav.date,
-        );
-        if (rate !== null) {
-          savingsDeduction += sav.amount * rate;
-        }
-      }
-    }
-
-    const available = total - obligatoryDeduction - savingsDeduction;
+    const available = total - obligatoryDeduction;
     return Math.round(available * 100) / 100;
   },
 };
