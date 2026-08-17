@@ -347,6 +347,7 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
           amountMode,
           percentageIncomeId: amountMode === 'percentage_of_income' ? selectedIncomeId : undefined,
           percentageValue: amountMode === 'percentage_of_income' ? parseFloat(percentageValueStr) : undefined,
+          recurringExpenseId,
           reminderOffset,
           updatedAt: now,
         });
