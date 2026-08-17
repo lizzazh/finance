@@ -2,6 +2,7 @@ import { incomePeriodService } from './incomePeriod';
 import { balanceService } from './balance/balanceService';
 import { savingsCalculator } from './savingsCalculator';
 import { currencyService } from './currency/currencyService';
+import { today } from '../utils/date';
 import { db } from '../db/database';
 import type { Forecast, CurrencyCode } from '../types';
 
@@ -33,6 +34,15 @@ export const forecastCalculator = {
         if (preview) {
             plannedSavingsBase = preview.baseAmount;
         }
+    }
+
+    // Add future manual savings transactions within the period
+    const futureSavings = await db.savingsTransactions
+      .where('date')
+      .between(today(), period.endDate, false, true)
+      .toArray();
+    for (const sav of futureSavings) {
+      plannedSavingsBase += sav.baseAmount;
     }
 
     // obligatoryExpenses: sum of planned expenses within period (in baseCurrency)

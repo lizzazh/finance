@@ -122,22 +122,22 @@ export default function Analytics() {
       ) : (
         <>
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="card bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/30">
-              <div className="text-xs font-medium text-emerald-800 dark:text-emerald-400 mb-1">Доходы</div>
-              <div className="text-xl font-bold text-emerald-600 dark:text-emerald-500">+{totals.income.toLocaleString('ru-RU')} {currencySymbol}</div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="card bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/30 p-3">
+              <div className="text-[11px] sm:text-xs font-medium text-emerald-800 dark:text-emerald-400 mb-1 leading-tight">Доходы</div>
+              <div className="text-[clamp(1rem,4vw,1.25rem)] font-bold text-emerald-600 dark:text-emerald-500 break-words leading-tight">+{totals.income.toLocaleString('ru-RU')} {currencySymbol}</div>
             </div>
-            <div className="card bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/30">
-              <div className="text-xs font-medium text-amber-800 dark:text-amber-400 mb-1">Расходы</div>
-              <div className="text-xl font-bold text-amber-600 dark:text-amber-500">−{totals.expenses.toLocaleString('ru-RU')} {currencySymbol}</div>
+            <div className="card bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/30 p-3">
+              <div className="text-[11px] sm:text-xs font-medium text-amber-800 dark:text-amber-400 mb-1 leading-tight">Расходы</div>
+              <div className="text-[clamp(1rem,4vw,1.25rem)] font-bold text-amber-600 dark:text-amber-500 break-words leading-tight">−{totals.expenses.toLocaleString('ru-RU')} {currencySymbol}</div>
             </div>
-            <div className="card bg-indigo-50 dark:bg-indigo-900/20 border-indigo-100 dark:border-indigo-800/30">
-              <div className="text-xs font-medium text-indigo-800 dark:text-indigo-400 mb-1">Накопления</div>
-              <div className="text-xl font-bold text-indigo-600 dark:text-indigo-500">{totals.savings.toLocaleString('ru-RU')} {currencySymbol}</div>
+            <div className="card bg-indigo-50 dark:bg-indigo-900/20 border-indigo-100 dark:border-indigo-800/30 p-3">
+              <div className="text-[11px] sm:text-xs font-medium text-indigo-800 dark:text-indigo-400 mb-1 leading-tight">Накопления</div>
+              <div className="text-[clamp(1rem,4vw,1.25rem)] font-bold text-indigo-600 dark:text-indigo-500 break-words leading-tight">{totals.savings.toLocaleString('ru-RU')} {currencySymbol}</div>
             </div>
-            <div className="card bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700">
-              <div className="text-xs font-medium text-secondary mb-1">В день (среднее)</div>
-              <div className="text-xl font-bold">{totals.avg.toLocaleString('ru-RU')} {currencySymbol}</div>
+            <div className="card bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 p-3">
+              <div className="text-[11px] sm:text-xs font-medium text-secondary mb-1 leading-tight">В день (среднее)</div>
+              <div className="text-[clamp(1rem,4vw,1.25rem)] font-bold break-words leading-tight">{totals.avg.toLocaleString('ru-RU')} {currencySymbol}</div>
             </div>
           </div>
 

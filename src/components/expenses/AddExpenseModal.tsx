@@ -219,42 +219,48 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
       const now = new Date().toISOString();
 
       if (recordType === 'savings') {
-        if (isEditing && initialSavings) {
-          await db.savingsTransactions.update(initialSavings.id, {
-            amount,
-            currency,
-            exchangeRate: snapshot.exchangeRate,
-            baseAmount: snapshot.baseAmount,
-            baseCurrency: snapshot.baseCurrency,
-            date,
-            ruleType: amountMode === 'percentage_of_income' ? 'percentage' : 'fixed',
-            ruleValue: amountMode === 'percentage_of_income' ? parseFloat(percentageValueStr) : amount,
-            incomeId: amountMode === 'percentage_of_income' ? selectedIncomeId : 'manual',
-          });
+        if (expenseType === 'single') {
+          if (isEditing && initialSavings) {
+            await db.savingsTransactions.update(initialSavings.id, {
+              amount,
+              currency,
+              exchangeRate: snapshot.exchangeRate,
+              baseAmount: snapshot.baseAmount,
+              baseCurrency: snapshot.baseCurrency,
+              date,
+              ruleType: amountMode === 'percentage_of_income' ? 'percentage' : 'fixed',
+              ruleValue: amountMode === 'percentage_of_income' ? parseFloat(percentageValueStr) : amount,
+              incomeId: amountMode === 'percentage_of_income' ? selectedIncomeId : 'manual',
+            });
+          } else {
+            // Save as single savings transaction
+            await db.savingsTransactions.add({
+              id: generateId(),
+              incomeId: amountMode === 'percentage_of_income' ? selectedIncomeId : 'manual',
+              amount,
+              currency,
+              exchangeRate: snapshot.exchangeRate,
+              baseAmount: snapshot.baseAmount,
+              baseCurrency: snapshot.baseCurrency,
+              ruleId: 'manual',
+              ruleType: amountMode === 'percentage_of_income' ? 'percentage' : 'fixed',
+              ruleValue: amountMode === 'percentage_of_income' ? parseFloat(percentageValueStr) : amount,
+              date,
+              createdAt: now
+            });
+          }
+          
+          onSaved?.();
+          onClose();
+          return;
         } else {
-          // Save as savings transaction
-          await db.savingsTransactions.add({
-            id: generateId(),
-            incomeId: amountMode === 'percentage_of_income' ? selectedIncomeId : 'manual',
-            amount,
-            currency,
-            exchangeRate: snapshot.exchangeRate,
-            baseAmount: snapshot.baseAmount,
-            baseCurrency: snapshot.baseCurrency,
-            ruleId: 'manual',
-            ruleType: amountMode === 'percentage_of_income' ? 'percentage' : 'fixed',
-            ruleValue: amountMode === 'percentage_of_income' ? parseFloat(percentageValueStr) : amount,
-            date,
-            createdAt: now
-          });
+          // It's a recurring saving! We will save it in recurringExpenses with a special category __savings__
+          // Fall through to the recurring logic below, but override categoryId.
         }
-        
-        onSaved?.();
-        onClose();
-        return;
       }
 
       let recurringExpenseId: string | undefined = initialExpense?.recurringExpenseId;
+      const actualCategoryId = recordType === 'savings' ? '__savings__' : categoryId;
 
       if (expenseType === 'recurring') {
         const startDayOfMonth = parseInt(date.slice(8, 10)) || undefined;
@@ -262,10 +268,10 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
 
         if (recurringExpenseId) {
           await recurringExpensesRepo.update(recurringExpenseId, {
-            name: description.trim() || categories.find((c) => c.id === categoryId)?.name || 'Постоянный расход',
+            name: recordType === 'savings' ? 'Регулярное накопление' : description.trim() || categories.find((c) => c.id === actualCategoryId)?.name || 'Постоянный расход',
             amount,
             currency,
-            categoryId,
+            categoryId: actualCategoryId,
             frequency,
             dayOfMonth: frequency === 'monthly' ? startDayOfMonth : undefined,
             customIntervalDays: frequency === 'custom' ? customIntervalDays : undefined,
@@ -305,10 +311,10 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
           recurringExpenseId = generateId();
           await recurringExpensesRepo.add({
             id: recurringExpenseId,
-            name: description.trim() || categories.find((c) => c.id === categoryId)?.name || 'Постоянный расход',
+            name: recordType === 'savings' ? 'Регулярное накопление' : description.trim() || categories.find((c) => c.id === actualCategoryId)?.name || 'Постоянный расход',
             amount,
             currency,
-            categoryId,
+            categoryId: actualCategoryId,
             frequency,
             dayOfMonth: frequency === 'monthly' ? startDayOfMonth : undefined,
             customIntervalDays: frequency === 'custom' ? customIntervalDays : undefined,
@@ -345,14 +351,14 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
           updatedAt: now,
         });
       } else {
-        await expensesRepo.add({
+        const expense: Expense = {
           id: generateId(),
           amount,
           currency,
           exchangeRate: snapshot.exchangeRate,
           baseAmount: snapshot.baseAmount,
           baseCurrency: snapshot.baseCurrency,
-          categoryId,
+          categoryId: actualCategoryId,
           description: description.trim() || (amountMode === 'percentage_of_income' ? `${percentageValueStr}% от дохода` : undefined),
           date,
           status,
@@ -363,7 +369,8 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
           reminderOffset,
           createdAt: now,
           updatedAt: now,
-        });
+        };
+        await expensesRepo.add(expense);
       }
 
       localStorage.setItem('lastUsedExpenseCategory', categoryId);
@@ -567,9 +574,8 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
           </div>
 
           {/* Single vs Recurring Segmented Control */}
-          {recordType === 'expense' && (
           <div className="form-group">
-            <label className="label">Тип расхода</label>
+            <label className="label">{recordType === 'expense' ? 'Тип расхода' : 'Тип пополнения'}</label>
             <div className="segmented-control">
               <button
                 type="button"
@@ -587,10 +593,9 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
               </button>
             </div>
           </div>
-          )}
 
           {/* Additional fields if Recurring */}
-          {recordType === 'expense' && expenseType === 'recurring' && (
+          {expenseType === 'recurring' && (
             <div className="card p-3 flex flex-col gap-3 bg-opacity-50">
               <div className="form-group">
                 <label className="label">Периодичность повторения</label>

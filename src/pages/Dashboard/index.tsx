@@ -87,12 +87,10 @@ export default function Dashboard() {
                   <p className="text-xs opacity-80">Свободно после обязательных</p>
                   <div className="font-bold text-lg">{formatAmount(availableBalance, currentBalance.baseCurrency)}</div>
                 </div>
-                {(forecast?.plannedSavings || 0) > 0 && (
-                  <div>
-                    <p className="text-xs opacity-80">Свободно после накоплений</p>
-                    <div className="font-bold text-lg">{formatAmount(availableAfterSavings, currentBalance.baseCurrency)}</div>
-                  </div>
-                )}
+                <div>
+                  <p className="text-xs opacity-80">Свободно после накоплений</p>
+                  <div className="font-bold text-lg">{formatAmount(availableAfterSavings, currentBalance.baseCurrency)}</div>
+                </div>
               </div>
             </div>
           </div>

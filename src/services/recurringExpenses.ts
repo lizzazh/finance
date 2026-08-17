@@ -33,23 +33,44 @@ export const recurringExpensesService = {
         const exchangeRate = await currencyService.getRateForDate(recurring.currency, baseCurrency, nextDate) ?? 1;
         const baseAmount = Math.round(recurring.amount * exchangeRate * 100) / 100;
 
-        const expense: Expense = {
-          id: generateId(),
-          amount: recurring.amount,
-          currency: recurring.currency,
-          exchangeRate,
-          baseAmount,
-          baseCurrency,
-          categoryId: recurring.categoryId,
-          description: recurring.name,
-          date: nextDate,
-          status: 'planned',
-          recurringExpenseId: recurring.id,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
+        if (recurring.categoryId === '__savings__') {
+          // It's a recurring savings!
+          const ruleType = recurring.amountMode === 'percentage_of_income' ? 'percentage' : 'fixed';
+          const ruleValue = recurring.amountMode === 'percentage_of_income' && recurring.percentageValue ? recurring.percentageValue : recurring.amount;
+          
+          await db.savingsTransactions.add({
+            id: generateId(),
+            incomeId: recurring.amountMode === 'percentage_of_income' && recurring.percentageIncomeId ? recurring.percentageIncomeId : 'manual',
+            amount: recurring.amount,
+            currency: recurring.currency,
+            exchangeRate,
+            baseAmount,
+            baseCurrency,
+            ruleId: 'manual',
+            ruleType,
+            ruleValue,
+            date: nextDate,
+            createdAt: new Date().toISOString()
+          });
+        } else {
+          const expense: Expense = {
+            id: generateId(),
+            amount: recurring.amount,
+            currency: recurring.currency,
+            exchangeRate,
+            baseAmount,
+            baseCurrency,
+            categoryId: recurring.categoryId,
+            description: recurring.name,
+            date: nextDate,
+            status: 'planned',
+            recurringExpenseId: recurring.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
 
-        await expensesRepo.add(expense);
+          await expensesRepo.add(expense);
+        }
       }
 
       nextDate = getNextRecurringDate(nextDate, recurring.frequency, recurring.dayOfMonth, recurring.customIntervalDays);
