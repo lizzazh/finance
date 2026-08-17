@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, PlusCircle, ArrowDownRight, ArrowUpRight, Clock, Pencil, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PlusCircle, ArrowDownRight, ArrowUpRight, Clock, Pencil, Trash2, Check } from 'lucide-react';
 import { db } from '../../db/database';
 import { expensesRepo, incomesRepo, recurringExpensesRepo, recurringIncomesRepo } from '../../db/repositories';
 import { toDisplayDate, toDisplayMonth, startOfMonth, endOfMonth, today, getNextRecurringDate } from '../../utils/date';
@@ -232,6 +232,16 @@ export default function CalendarPage() {
     }
   }
 
+  async function handleMarkAsPaid(ev: CalendarEvent) {
+    if (ev.sourceType === 'expense' && ev.rawExpense) {
+      await expensesRepo.update(ev.rawExpense.id, {
+        status: 'completed',
+        updatedAt: new Date().toISOString()
+      });
+      loadEvents();
+    }
+  }
+
   function handleEditEvent(ev: CalendarEvent) {
     if (ev.sourceType === 'expense' && ev.rawExpense) {
       setEditingExpense(ev.rawExpense);
@@ -434,6 +444,15 @@ export default function CalendarPage() {
 
                   {(ev.rawExpense || ev.rawIncome) && (
                     <div className="flex items-center gap-1">
+                      {ev.type === 'planned' && ev.rawExpense && (
+                        <button
+                          className="p-1.5 rounded-lg border border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all mr-1"
+                          onClick={() => handleMarkAsPaid(ev)}
+                          title="Отметить как оплачено"
+                        >
+                          <Check size={15} />
+                        </button>
+                      )}
                       <button
                         className="p-1.5 rounded-lg border border-border text-secondary hover:text-primary transition-all"
                         onClick={() => handleEditEvent(ev)}

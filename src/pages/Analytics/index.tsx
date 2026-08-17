@@ -213,19 +213,23 @@ export default function Analytics() {
                     <Tooltip formatter={(value: any) => `${Number(value).toLocaleString('ru-RU')} ${currencySymbol}`} />
                   </PieChart>
                 </ResponsiveContainer>
-                <div className="category-legend">
+                <div className="flex flex-col gap-2 w-full mt-4">
                   {categories.map((cat, idx) => (
-                    <div key={cat.categoryId} className="category-legend-item">
-                      <span
-                        className="category-legend-dot"
-                        style={{ background: CHART_COLORS[idx % CHART_COLORS.length] }}
-                      />
-                      <span className="category-legend-icon">{cat.categoryIcon}</span>
-                      <span className="category-legend-name">{cat.categoryName}</span>
-                      <span className="category-legend-pct">{cat.percentage.toFixed(0)}%</span>
-                      <span className="category-legend-amount">
-                        {cat.amount.toLocaleString('ru-RU')} {currencySymbol}
-                      </span>
+                    <div key={cat.categoryId} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                      <div className="flex items-center gap-2 overflow-hidden flex-1">
+                        <span
+                          className="w-3 h-3 rounded-full shrink-0"
+                          style={{ background: CHART_COLORS[idx % CHART_COLORS.length] }}
+                        />
+                        <span className="text-base shrink-0">{cat.categoryIcon}</span>
+                        <span className="text-sm font-medium truncate">{cat.categoryName}</span>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0 pl-2">
+                        <span className="text-xs font-bold text-secondary bg-secondary/10 px-2 py-0.5 rounded-full">{cat.percentage.toFixed(0)}%</span>
+                        <span className="text-sm font-bold min-w-[70px] text-right">
+                          {cat.amount.toLocaleString('ru-RU')} {currencySymbol}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
