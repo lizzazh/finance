@@ -561,6 +561,8 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
               </div>
             )}
           </div>
+            </>
+          )}
 
           {/* Date */}
           <div className="form-group">
@@ -693,8 +695,6 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
                 onChange={(cfg) => setReminderOffset(formatReminderConfig(cfg))}
               />
             </div>
-          )}
-            </>
           )}
 
           {/* Description */}
