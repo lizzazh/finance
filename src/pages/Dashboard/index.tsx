@@ -6,6 +6,7 @@ import { formatAmount } from '../../utils/format';
 import { analyticsService } from '../../services/analytics';
 import { startOfMonth, endOfMonth, today, toDisplayDate, toDisplayMonth } from '../../utils/date';
 import { BarChart, Bar, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
+import { Wallet, CalendarDays, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import type { DailyExpense } from '../../types';
 
 export default function Dashboard() {
@@ -61,35 +62,45 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          <div className="hero-card text-white flex flex-col gap-4 rounded-2xl">
-            <div>
-              <p className="text-sm font-medium opacity-80 mb-1">Можно тратить сегодня</p>
-              <div className="amount-large flex items-baseline gap-2">
-                <span>≈</span>
-                {formatAmount(dailyLimit, currentBalance.baseCurrency)}
+          <div className="hero-card text-white flex flex-col gap-5 rounded-2xl p-5 md:p-6 shadow-md relative overflow-hidden">
+            <div className="relative z-10">
+              <p className="text-sm font-medium opacity-80 mb-1">Доступно для трат</p>
+              <div className="amount-large text-4xl md:text-5xl font-bold tracking-tight">
+                {formatAmount(availableAfterSavings, currentBalance.baseCurrency)}
               </div>
+              
+              {availableBalance !== availableAfterSavings && (
+                <p className="text-xs opacity-75 mt-1 font-medium">
+                  До накоплений: {formatAmount(availableBalance, currentBalance.baseCurrency)}
+                </p>
+              )}
             </div>
             
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/20">
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/20 relative z-10">
               <div>
-                <p className="text-xs opacity-80">Сейчас у вас</p>
-                <div className="font-bold text-lg">{formatAmount(currentBalance.total, currentBalance.baseCurrency)}</div>
+                <div className="flex items-center gap-1.5 opacity-80 mb-1">
+                  <Wallet size={14} />
+                  <p className="text-xs font-medium">Всего на счетах</p>
+                </div>
+                <div className="font-bold text-lg leading-tight">
+                  {formatAmount(currentBalance.total, currentBalance.baseCurrency)}
+                </div>
                 {Object.keys(currentBalance.byCurrency).length > 1 && (
-                  <div className="text-xs opacity-70 mt-1">
+                  <div className="text-[10px] opacity-70 mt-0.5 truncate">
                     {Object.entries(currentBalance.byCurrency)
                       .map(([code, amt]) => formatAmount(amt, code))
                       .join(' · ')}
                   </div>
                 )}
               </div>
-              <div className="flex flex-col gap-3">
-                <div>
-                  <p className="text-xs opacity-80">Свободно после обязательных</p>
-                  <div className="font-bold text-lg">{formatAmount(availableBalance, currentBalance.baseCurrency)}</div>
+              
+              <div>
+                <div className="flex items-center gap-1.5 opacity-80 mb-1">
+                  <CalendarDays size={14} />
+                  <p className="text-xs font-medium">Лимит на день</p>
                 </div>
-                <div>
-                  <p className="text-xs opacity-80">Свободно после накоплений</p>
-                  <div className="font-bold text-lg">{formatAmount(availableAfterSavings, currentBalance.baseCurrency)}</div>
+                <div className="font-bold text-lg leading-tight">
+                  ≈ {formatAmount(dailyLimit, currentBalance.baseCurrency)}
                 </div>
               </div>
             </div>
