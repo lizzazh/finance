@@ -407,12 +407,16 @@ export default function CalendarPage() {
             const compExpEvents = dayEvs.filter((e) => e.type === 'expense');
             const completedExpTotal = compExpEvents.reduce((sum, e) => sum + e.amount, 0);
             const compExpCurrency = compExpEvents[0]?.currency || 'UAH';
+
+            const savEvents = dayEvs.filter((e) => e.type === 'savings');
+            const savTotal = savEvents.reduce((sum, e) => sum + e.amount, 0);
+            const savCurrency = savEvents[0]?.currency || 'UAH';
             
-            const planExpEvents = dayEvs.filter((e) => e.type === 'planned' || e.type === 'savings');
+            const planExpEvents = dayEvs.filter((e) => e.type === 'planned');
             const plannedExpTotal = planExpEvents.reduce((sum, e) => sum + e.amount, 0);
             const planExpCurrency = planExpEvents[0]?.currency || 'UAH';
             
-            const hasCompleted = completedExpTotal > 0;
+            const hasCompleted = completedExpTotal > 0 || savTotal > 0;
             const hasPlanned = plannedExpTotal > 0;
 
             return (
@@ -439,6 +443,9 @@ export default function CalendarPage() {
                   )}
                   {completedExpTotal > 0 && (
                     <span className="text-blue-500 font-medium truncate">{Math.round(completedExpTotal)}{getCurrencySymbol(compExpCurrency)}</span>
+                  )}
+                  {savTotal > 0 && (
+                    <span className="text-blue-500 font-medium truncate">{Math.round(savTotal)}{getCurrencySymbol(savCurrency)}</span>
                   )}
                   {plannedExpTotal > 0 && (
                     <span className="text-red-500 font-medium truncate">-{Math.round(plannedExpTotal)}{getCurrencySymbol(planExpCurrency)}</span>
@@ -490,7 +497,7 @@ export default function CalendarPage() {
             {selectedEvents.map((ev, i) => (
               <div key={i} className="py-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 ${ev.type === 'income' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40' : ev.type === 'planned' ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/40' : 'bg-red-50 text-red-600 dark:bg-red-950/40'}`}>
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 ${ev.type === 'income' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40' : ev.type === 'planned' ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/40' : 'bg-blue-50 text-blue-600 dark:bg-blue-950/40'}`}>
                     {ev.icon}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -503,8 +510,8 @@ export default function CalendarPage() {
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  <div className={`font-bold text-base ${ev.type === 'income' ? 'text-emerald-600' : 'text-red-500'}`}>
-                    {ev.type === 'income' ? '+' : '−'}{formatAmount(ev.amount, ev.currency)}
+                  <div className={`font-bold text-base ${ev.type === 'income' ? 'text-emerald-600' : ev.type === 'planned' ? 'text-red-500' : 'text-blue-500'}`}>
+                    {ev.type === 'income' ? '+' : ev.type === 'planned' ? '−' : ''}{formatAmount(ev.amount, ev.currency)}
                   </div>
 
                   {(ev.rawExpense || ev.rawIncome || ev.rawRecurringExpense || ev.rawRecurringIncome) && (
