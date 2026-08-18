@@ -333,6 +333,13 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
         await recurringExpensesService.processSingle(recurringExpenseId);
       }
 
+      if (recordType === 'savings') {
+        localStorage.setItem('lastUsedExpenseCategory', categoryId);
+        onSaved?.();
+        onClose();
+        return;
+      }
+
       if (isEditing && initialExpense) {
         await expensesRepo.update(initialExpense.id, {
           amount,
@@ -390,7 +397,7 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
       <div className="modal">
         {/* Sticky Header */}
         <div className="modal-header">
-          <h2 className="modal-title">{isEditing ? 'Редактировать расход' : 'Добавить расход'}</h2>
+          <h2 className="modal-title">{isEditing ? 'Редактировать' : (recordType === 'savings' ? 'Добавить накопление' : 'Добавить расход')}</h2>
           <button className="btn-ghost" onClick={onClose} aria-label="Закрыть">
             <X size={20} />
           </button>
@@ -722,7 +729,7 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
             onClick={handleSave}
             disabled={isSubmitting || !parseFloat(amountStr) || parseFloat(amountStr) <= 0}
           >
-            {isEditing ? 'Сохранить изменения' : 'Добавить расход'}
+            {isEditing ? 'Сохранить изменения' : (recordType === 'savings' ? 'Добавить накопление' : 'Добавить расход')}
           </button>
         </div>
       </div>

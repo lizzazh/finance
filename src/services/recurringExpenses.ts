@@ -27,7 +27,7 @@ export const recurringExpensesService = {
       
       let isDuplicate = false;
       if (recurring.categoryId === '__savings__') {
-        const existingSavings = await db.savingsTransactions.where('recurringExpenseId').equals(recurring.id).toArray();
+        const existingSavings = await db.savingsTransactions.filter(s => s.recurringExpenseId === recurring.id).toArray();
         isDuplicate = existingSavings.some(s => s.date === nextDate);
       } else {
         const existingExpenses = await expensesRepo.getByDateRange(nextDate, nextDate);
