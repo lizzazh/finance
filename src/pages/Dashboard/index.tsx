@@ -81,13 +81,13 @@ export default function Dashboard() {
             </div>
             
             <div className="flex flex-col gap-2 pt-4 border-t border-white/20 relative z-10">
-              <div className="flex justify-between items-center bg-white/10 rounded-lg px-3 py-2.5">
-                <span className="text-sm font-medium opacity-90">Свободно после обязательных</span>
-                <span className="font-bold text-lg">{formatAmount(availableBalance, currentBalance.baseCurrency)}</span>
+              <div className="flex flex-wrap justify-between items-baseline gap-x-4 gap-y-1 bg-white/10 rounded-lg px-3 py-2.5">
+                <span className="text-sm font-medium opacity-90 leading-tight">Свободно после обязательных</span>
+                <span className="font-bold text-lg whitespace-nowrap">{formatAmount(availableBalance, currentBalance.baseCurrency)}</span>
               </div>
-              <div className="flex justify-between items-center bg-white/10 rounded-lg px-3 py-2.5">
-                <span className="text-sm font-medium opacity-90">Свободно после накоплений</span>
-                <span className="font-bold text-lg text-emerald-200">{formatAmount(availableAfterSavings, currentBalance.baseCurrency)}</span>
+              <div className="flex flex-wrap justify-between items-baseline gap-x-4 gap-y-1 bg-white/10 rounded-lg px-3 py-2.5">
+                <span className="text-sm font-medium opacity-90 leading-tight">Свободно после накоплений</span>
+                <span className="font-bold text-lg text-emerald-200 whitespace-nowrap">{formatAmount(availableAfterSavings, currentBalance.baseCurrency)}</span>
               </div>
             </div>
           </div>
