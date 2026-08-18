@@ -98,7 +98,7 @@ export function useDashboard() {
       setData({
         currentBalance,
         availableBalance: limitData.availableBalance,
-        availableAfterSavings: limitData.availableBalance - (forecast?.plannedSavings || 0),
+        availableAfterSavings: limitData.availableAfterSavings,
         dailyLimit: limitData.dailyLimit,
         monthlyExpenses,
         monthlyIncome,

@@ -92,7 +92,7 @@ export const balanceService = {
    * − sum of planned obligatory expenses with date <= nextIncomeDate
    * − sum of savingsTransactions for incomes in the current period
    */
-  async availableBalance(): Promise<number> {
+  async getAvailableBalances(): Promise<{ availableBalance: number, availableAfterSavings: number }> {
     const { total, baseCurrency } = await balanceService.currentBalance();
 
     const todayStr = today();
@@ -120,8 +120,6 @@ export const balanceService = {
       nextIncomeDate = upcoming[0]?.nextDate ?? null;
     }
 
-    // If there is no future income, all future planned expenses must be covered by current balance.
-    // If there IS a future income, we only deduct expenses up to that income date.
     const periodEnd = nextIncomeDate ?? '9999-12-31';
 
     // Planned expenses within period (date <= nextIncomeDate)
@@ -132,22 +130,32 @@ export const balanceService = {
       .toArray();
 
     let obligatoryDeduction = 0;
+    let savingsDeduction = 0;
+
     for (const exp of plannedExpenses) {
-      if (exp.currency === baseCurrency) {
-        obligatoryDeduction += exp.amount;
-      } else {
+      let amount = exp.amount;
+      if (exp.currency !== baseCurrency) {
         const rate = await currencyService.getRateForDate(
           exp.currency,
           baseCurrency,
           exp.date,
         );
-        if (rate !== null) {
-          obligatoryDeduction += exp.amount * rate;
-        }
+        amount = amount * (rate ?? 1);
+      }
+      
+      if (exp.categoryId === '__savings__') {
+        savingsDeduction += amount;
+      } else {
+        obligatoryDeduction += amount;
       }
     }
 
-    const available = total - obligatoryDeduction;
-    return Math.round(available * 100) / 100;
+    const availableBalance = total - obligatoryDeduction;
+    const availableAfterSavings = availableBalance - savingsDeduction;
+
+    return {
+      availableBalance: Math.round(availableBalance * 100) / 100,
+      availableAfterSavings: Math.round(availableAfterSavings * 100) / 100
+    };
   },
 };

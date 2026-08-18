@@ -23,6 +23,7 @@ export const dailyLimitCalculator = {
     daysAvailable: number;
     nextIncomeDate: string | null;
     availableBalance: number;
+    availableAfterSavings: number;
     baseCurrency: CurrencyCode;
   }> {
     const baseCurrencySetting = await db.settings.get('baseCurrency');
@@ -31,8 +32,8 @@ export const dailyLimitCalculator = {
 
     const todayStr = today();
 
-    // Get available balance (already deducts planned expenses and savings)
-    const available = await balanceService.availableBalance();
+    // Get available balances
+    const { availableBalance, availableAfterSavings } = await balanceService.getAvailableBalances();
 
     // Get next income date
     const period = await incomePeriodService.getCurrentPeriod();
@@ -48,13 +49,14 @@ export const dailyLimitCalculator = {
       daysAvailable = Math.max(1, diff);
     }
 
-    const dailyLimit = Math.round((available / daysAvailable) * 100) / 100;
+    const dailyLimit = Math.round((availableAfterSavings / daysAvailable) * 100) / 100;
 
     return {
       dailyLimit: Math.max(0, dailyLimit),
       daysAvailable,
       nextIncomeDate,
-      availableBalance: available,
+      availableBalance,
+      availableAfterSavings,
       baseCurrency,
     };
   },
