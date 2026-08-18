@@ -24,11 +24,10 @@ export const balanceService = {
     const baseCurrency: CurrencyCode =
       (baseCurrencySetting?.value as string) || 'UAH';
 
-    const [adjustments, incomes, expenses, savings] = await Promise.all([
+    const [adjustments, incomes, expenses] = await Promise.all([
       db.balanceAdjustments.toArray(),
       db.incomes.toArray(),
       db.expenses.where('status').equals('completed').toArray(),
-      db.savingsTransactions.toArray(),
     ]);
 
     const byCurrency: Record<string, number> = {};
@@ -71,14 +70,9 @@ export const balanceService = {
       await addAmount(inc.amount, inc.currency, inc.exchangeRate, inc.date);
     }
 
-    // Completed expenses (subtract)
+    // Expenses and savings are both in the expenses table (subtract)
     for (const exp of expenses) {
       await addAmount(-exp.amount, exp.currency, exp.exchangeRate, exp.date);
-    }
-
-    // Savings (subtract, since money went to the piggy bank)
-    for (const sav of savings) {
-      await addAmount(-sav.amount, sav.currency, sav.exchangeRate, sav.date);
     }
 
     // Round total

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Income } from '../types';
-import { incomesRepo, savingsTransactionsRepo } from '../db/repositories';
+import { incomesRepo, expensesRepo } from '../db/repositories';
 import { generateId } from '../utils/id';
 import { savingsCalculator } from '../services/savingsCalculator';
 
@@ -44,10 +44,11 @@ export function useIncomes() {
   };
 
   const deleteIncome = async (id: string) => {
-    // Delete associated savings transactions first
-    const savings = await savingsTransactionsRepo.getByIncomeId(id);
+    // Delete associated savings expenses first
+    const linkedExpenses = await expensesRepo.getAll();
+    const savings = linkedExpenses.filter(e => e.categoryId === '__savings__' && e.percentageIncomeId === id);
     for (const sav of savings) {
-      await savingsTransactionsRepo.delete(sav.id);
+      await expensesRepo.delete(sav.id);
     }
     await incomesRepo.delete(id);
     refresh();

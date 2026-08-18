@@ -20,12 +20,11 @@ export function ManualRatesManager({ baseCurrency }: ManualRatesManagerProps) {
     async function fetchUsedCurrencies() {
       const expenses = await db.expenses.toArray();
       const incomes = await db.incomes.toArray();
-      const savings = await db.savingsTransactions.toArray();
       const recExp = await db.recurringExpenses.toArray();
       const recInc = await db.recurringIncomes.toArray();
 
       const used = new Set<string>(['USD', 'EUR', 'PLN', 'GBP']);
-      [...expenses, ...incomes, ...savings, ...recExp, ...recInc].forEach(item => {
+      [...expenses, ...incomes, ...recExp, ...recInc].forEach(item => {
         if (item.currency && item.currency !== baseCurrency) {
           used.add(item.currency);
         }

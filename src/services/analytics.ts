@@ -26,6 +26,8 @@ export const analyticsService = {
       const cat = catMap.get(exp.categoryId);
       if (cat) {
         grouped[exp.date].cats.add(cat.name);
+      } else if (exp.categoryId === '__savings__') {
+        grouped[exp.date].cats.add('Накопление');
       }
     }
 
@@ -61,15 +63,27 @@ export const analyticsService = {
       total += exp.baseAmount;
     }
 
-    const result: CategoryBreakdown[] = Object.keys(grouped).map(catId => {
-      const cat = catMap.get(catId);
+    const result: CategoryBreakdown[] = Object.keys(grouped).map(categoryId => {
+      const data = grouped[categoryId];
+      const cat = catMap.get(categoryId);
+      let name = cat?.name || 'Другое';
+      let icon = cat?.icon || '📦';
+      let color = '#9ca3af';
+
+      if (categoryId === '__savings__') {
+        name = 'Накопление';
+        icon = '🐷';
+        color = '#3a7ca5';
+      }
+
       return {
-        categoryId: catId,
-        categoryName: cat ? cat.name : 'Unknown',
-        categoryIcon: cat ? cat.icon : '❓',
-        amount: grouped[catId].amount,
-        percentage: total > 0 ? (grouped[catId].amount / total) * 100 : 0,
-        count: grouped[catId].count
+        categoryId,
+        categoryName: name,
+        categoryIcon: icon,
+        categoryColor: color,
+        amount: data.amount,
+        percentage: total > 0 ? (data.amount / total) * 100 : 0,
+        count: data.count
       };
     });
 
@@ -125,18 +139,19 @@ export const analyticsService = {
     const expenses = await db.expenses
       .where('date')
       .between(from, to, true, true)
-      .filter(e => e.status !== 'cancelled')
+      .filter(e => e.status !== 'cancelled' && e.categoryId !== '__savings__')
       .toArray();
 
     return expenses.reduce((sum, exp) => sum + exp.baseAmount, 0);
   },
 
   async getTotalSavings(from: string, to: string): Promise<number> {
-    const savings = await db.savingsTransactions
+    const savingsExpenses = await db.expenses
       .where('date')
       .between(from, to, true, true)
+      .filter(e => e.categoryId === '__savings__' && e.status !== 'cancelled')
       .toArray();
-
-    return savings.reduce((sum, sav) => sum + sav.baseAmount, 0);
-  }
+      
+    return savingsExpenses.reduce((sum, s) => sum + s.baseAmount, 0);
+  },
 };

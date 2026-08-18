@@ -53,19 +53,20 @@ export function AddSavingsModal({ open, onClose, onSaved }: AddSavingsModalProps
       }
 
       const now = new Date().toISOString();
-      await db.savingsTransactions.add({
+      await db.expenses.add({
         id: generateId(),
-        incomeId: 'manual', // Identifier for manual savings
         amount,
         currency,
         exchangeRate,
         baseAmount,
         baseCurrency,
-        ruleId: 'manual',
-        ruleType: 'fixed',
-        ruleValue: amount,
+        categoryId: '__savings__',
+        description: 'Накопление',
         date,
-        createdAt: now
+        status: date <= now.slice(0,10) ? 'completed' : 'planned',
+        amountMode: 'fixed',
+        createdAt: now,
+        updatedAt: now
       });
 
       if (onSaved) onSaved();

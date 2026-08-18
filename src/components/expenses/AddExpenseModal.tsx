@@ -221,32 +221,36 @@ export function AddExpenseModal({ open, onClose, onSaved, initialExpense, initia
       if (recordType === 'savings') {
         if (expenseType === 'single') {
           if (isEditing && initialSavings) {
-            await db.savingsTransactions.update(initialSavings.id, {
+            await expensesRepo.update(initialSavings.id, {
               amount,
               currency,
               exchangeRate: snapshot.exchangeRate,
               baseAmount: snapshot.baseAmount,
               baseCurrency: snapshot.baseCurrency,
               date,
-              ruleType: amountMode === 'percentage_of_income' ? 'percentage' : 'fixed',
-              ruleValue: amountMode === 'percentage_of_income' ? parseFloat(percentageValueStr) : amount,
-              incomeId: amountMode === 'percentage_of_income' ? selectedIncomeId : 'manual',
+              amountMode: amountMode === 'percentage_of_income' ? 'percentage_of_income' : 'fixed',
+              percentageValue: amountMode === 'percentage_of_income' ? parseFloat(percentageValueStr) : undefined,
+              percentageIncomeId: amountMode === 'percentage_of_income' ? selectedIncomeId : undefined,
+              updatedAt: now
             });
           } else {
             // Save as single savings transaction
-            await db.savingsTransactions.add({
+            await expensesRepo.add({
               id: generateId(),
-              incomeId: amountMode === 'percentage_of_income' ? selectedIncomeId : 'manual',
               amount,
               currency,
               exchangeRate: snapshot.exchangeRate,
               baseAmount: snapshot.baseAmount,
               baseCurrency: snapshot.baseCurrency,
-              ruleId: 'manual',
-              ruleType: amountMode === 'percentage_of_income' ? 'percentage' : 'fixed',
-              ruleValue: amountMode === 'percentage_of_income' ? parseFloat(percentageValueStr) : amount,
+              categoryId: '__savings__',
+              description: amountMode === 'percentage_of_income' ? 'Авто-накопление' : 'Накопление',
               date,
-              createdAt: now
+              status: date <= now.slice(0,10) ? 'completed' : 'planned',
+              amountMode: amountMode === 'percentage_of_income' ? 'percentage_of_income' : 'fixed',
+              percentageValue: amountMode === 'percentage_of_income' ? parseFloat(percentageValueStr) : undefined,
+              percentageIncomeId: amountMode === 'percentage_of_income' ? selectedIncomeId : undefined,
+              createdAt: now,
+              updatedAt: now
             });
           }
           

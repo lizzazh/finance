@@ -24,15 +24,29 @@ export default function App() {
     async function init() {
       if (loading) return;
       try {
-        // Patch missing recurringExpenseId for savings to prevent duplicates
-        const recSavings = await db.recurringExpenses.where('categoryId').equals('__savings__').toArray();
-        for (const rs of recSavings) {
-          const savingsToFix = await db.savingsTransactions
-            .filter(s => !s.recurringExpenseId && s.ruleId === 'manual' && s.amount === rs.amount)
-            .toArray();
-          for (const s of savingsToFix) {
-            await db.savingsTransactions.update(s.id, { recurringExpenseId: rs.id });
-          }
+        // Migrate savingsTransactions to expenses
+        const allSavings = await db.savingsTransactions.toArray();
+        if (allSavings.length > 0) {
+          const newExpenses = allSavings.map(s => ({
+            id: s.id,
+            amount: s.amount,
+            currency: s.currency,
+            exchangeRate: s.exchangeRate,
+            baseAmount: s.baseAmount,
+            baseCurrency: s.baseCurrency,
+            categoryId: '__savings__',
+            description: s.ruleId === 'manual' ? 'Накопление' : 'Авто-накопление',
+            date: s.date,
+            status: s.date <= new Date().toISOString().slice(0, 10) ? 'completed' : 'planned',
+            amountMode: s.ruleType === 'percentage' ? 'percentage_of_income' : 'fixed',
+            percentageIncomeId: s.ruleType === 'percentage' ? s.incomeId : undefined,
+            percentageValue: s.ruleType === 'percentage' ? s.ruleValue : undefined,
+            recurringExpenseId: s.recurringExpenseId,
+            createdAt: s.createdAt,
+            updatedAt: s.createdAt,
+          }));
+          await db.expenses.bulkAdd(newExpenses as any);
+          await db.savingsTransactions.clear();
         }
 
         await seedDatabase();

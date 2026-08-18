@@ -37,12 +37,14 @@ export const forecastCalculator = {
     }
 
     // Add future manual savings transactions within the period
-    const futureSavings = await db.savingsTransactions
+    const futureSavings = await db.expenses
       .where('date')
       .between(today(), period.endDate, false, true)
       .toArray();
     for (const sav of futureSavings) {
-      plannedSavingsBase += sav.baseAmount;
+      if (sav.categoryId === '__savings__' && sav.status === 'planned') {
+        plannedSavingsBase += sav.baseAmount;
+      }
     }
 
     // obligatoryExpenses: sum of planned expenses within period (in baseCurrency)

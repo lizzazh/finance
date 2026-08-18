@@ -18,7 +18,6 @@ export const exportImportService = {
         recurringIncomes: await db.recurringIncomes.toArray(),
         recurringExpenses: await db.recurringExpenses.toArray(),
         savingsRules: await db.savingsRules.toArray(),
-        savingsTransactions: await db.savingsTransactions.toArray(),
         balanceAdjustments: await db.balanceAdjustments.toArray(),
         exchangeRates: await db.exchangeRates.toArray(),
         categories: await db.categories.toArray(),
@@ -38,7 +37,6 @@ export const exportImportService = {
       db.recurringIncomes.clear(),
       db.recurringExpenses.clear(),
       db.savingsRules.clear(),
-      db.savingsTransactions.clear(),
       db.balanceAdjustments.clear(),
       db.exchangeRates.clear(),
       db.categories.clear(),
@@ -66,12 +64,34 @@ export const exportImportService = {
       db.recurringIncomes.bulkPut(data.data.recurringIncomes || []),
       db.recurringExpenses.bulkPut(data.data.recurringExpenses || []),
       db.savingsRules.bulkPut(data.data.savingsRules || []),
-      db.savingsTransactions.bulkPut(data.data.savingsTransactions || []),
       db.balanceAdjustments.bulkPut(data.data.balanceAdjustments || []),
       db.exchangeRates.bulkPut(data.data.exchangeRates || []),
       db.categories.bulkPut(data.data.categories || []),
       db.settings.bulkPut(data.data.settings || [])
     ]);
+
+    // Handle legacy savingsTransactions from older exports
+    if ((data.data as any).savingsTransactions && (data.data as any).savingsTransactions.length > 0) {
+      const newExpenses = (data.data as any).savingsTransactions.map((s: any) => ({
+        id: s.id,
+        amount: s.amount,
+        currency: s.currency,
+        exchangeRate: s.exchangeRate,
+        baseAmount: s.baseAmount,
+        baseCurrency: s.baseCurrency,
+        categoryId: '__savings__',
+        description: s.ruleId === 'manual' ? 'Накопление' : 'Авто-накопление',
+        date: s.date,
+        status: s.date <= new Date().toISOString().slice(0, 10) ? 'completed' : 'planned',
+        amountMode: s.ruleType === 'percentage' ? 'percentage_of_income' : 'fixed',
+        percentageIncomeId: s.ruleType === 'percentage' ? s.incomeId : undefined,
+        percentageValue: s.ruleType === 'percentage' ? s.ruleValue : undefined,
+        recurringExpenseId: s.recurringExpenseId,
+        createdAt: s.createdAt,
+        updatedAt: s.createdAt,
+      }));
+      await db.expenses.bulkAdd(newExpenses as any);
+    }
   },
 
   downloadJSON(data: ExportData): void {

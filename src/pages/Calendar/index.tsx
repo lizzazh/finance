@@ -48,13 +48,12 @@ export default function CalendarPage() {
 
   async function loadEvents() {
     setLoading(true);
-    const [expenses, incomes, recurringIncomes, recurringExpenses, categories, savings] = await Promise.all([
+    const [expenses, incomes, recurringIncomes, recurringExpenses, categories] = await Promise.all([
       expensesRepo.getByDateRange(monthStart, monthEnd),
       incomesRepo.getByDateRange(monthStart, monthEnd),
       recurringIncomesRepo.getAll(),
       recurringExpensesRepo.getAll(),
       db.categories.toArray(),
-      db.savingsTransactions.where('date').between(monthStart, monthEnd, true, true).toArray(),
     ]);
 
     const catMap = new Map(categories.map((c) => [c.id, c]));
@@ -68,16 +67,19 @@ export default function CalendarPage() {
     // 1. Database actual and planned expenses
     for (const exp of expenses) {
       if (exp.status === 'cancelled') continue;
+      
+      const isSavings = exp.categoryId === '__savings__';
       const cat = catMap.get(exp.categoryId);
+      
       addEv(exp.date, {
         id: exp.id,
-        sourceType: 'expense',
+        sourceType: isSavings ? 'savings' : 'expense',
         date: exp.date,
-        type: exp.status === 'planned' ? 'planned' : 'expense',
-        name: exp.description || cat?.name || 'Расход',
+        type: exp.status === 'planned' ? 'planned' : (isSavings ? 'savings' : 'expense'),
+        name: exp.description || (isSavings ? 'Накопление' : (cat?.name || 'Расход')),
         amount: exp.amount,
         currency: exp.currency,
-        icon: cat?.icon || '📦',
+        icon: isSavings ? '🐷' : (cat?.icon || '📦'),
         rawExpense: exp,
       });
     }
@@ -94,21 +96,6 @@ export default function CalendarPage() {
         currency: inc.currency,
         icon: '💰',
         rawIncome: inc,
-      });
-    }
-
-    // 2.5 Database Savings
-    for (const sav of savings) {
-      addEv(sav.date, {
-        id: sav.id,
-        sourceType: 'savings',
-        date: sav.date,
-        type: 'savings',
-        name: 'Накопление',
-        amount: sav.amount,
-        currency: sav.currency,
-        icon: '🐷',
-        rawSavings: sav,
       });
     }
 
@@ -133,7 +120,7 @@ export default function CalendarPage() {
         if (re.endDate && cur > re.endDate) break;
 
         const alreadyExists = (evMap[cur] || []).some(
-          (e) => e.rawExpense?.recurringExpenseId === re.id || e.rawSavings?.recurringExpenseId === re.id
+          (e) => e.rawExpense?.recurringExpenseId === re.id
         );
         if (!alreadyExists) {
           addEv(cur, {
@@ -230,11 +217,6 @@ export default function CalendarPage() {
         await incomesRepo.delete(ev.rawIncome.id);
         loadEvents();
       }
-    } else if (ev.sourceType === 'savings' && ev.rawSavings) {
-      if (window.confirm('Удалить это накопление?')) {
-        await db.savingsTransactions.delete(ev.rawSavings.id);
-        loadEvents();
-      }
     } else if (ev.rawRecurringExpense) {
       if (window.confirm('Это регулярный шаблон расхода. Удалить этот шаблон и остановить будущие повторения?')) {
         await recurringExpensesRepo.delete(ev.rawRecurringExpense.id);
@@ -324,8 +306,8 @@ export default function CalendarPage() {
     } else if (ev.sourceType === 'income' && ev.rawIncome) {
       setEditingIncome(ev.rawIncome);
       setIncomeModalOpen(true);
-    } else if (ev.sourceType === 'savings' && ev.rawSavings) {
-      setEditingSavings(ev.rawSavings);
+    } else if (ev.sourceType === 'savings' && ev.rawExpense) {
+      setEditingSavings(ev.rawExpense as any);
       setEditingExpense(null);
       setExpenseModalOpen(true);
     }

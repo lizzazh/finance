@@ -69,20 +69,6 @@ export const savingsRulesRepo = {
   async getActive() { return db.savingsRules.filter(r => r.active).toArray(); }
 };
 
-export const savingsTransactionsRepo = {
-  async add(item: SavingsTransaction) { return db.savingsTransactions.add(item); },
-  async update(id: string, item: Partial<SavingsTransaction>) { return db.savingsTransactions.update(id, item); },
-  async delete(id: string) { return db.savingsTransactions.delete(id); },
-  async get(id: string) { return db.savingsTransactions.get(id); },
-  async getAll() { return db.savingsTransactions.toArray(); },
-  async getByIncomeId(incomeId: string) {
-    return db.savingsTransactions.where('incomeId').equals(incomeId).toArray();
-  },
-  async getByDateRange(from: string, to: string) {
-    return db.savingsTransactions.where('date').between(from, to, true, true).toArray();
-  }
-};
-
 export const balanceAdjustmentsRepo = {
   async add(item: BalanceAdjustment) { return db.balanceAdjustments.add(item); },
   async update(id: string, item: Partial<BalanceAdjustment>) { return db.balanceAdjustments.update(id, item); },

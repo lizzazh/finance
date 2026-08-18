@@ -295,7 +295,6 @@ export interface ExportData {
     recurringIncomes: RecurringIncome[];
     recurringExpenses: RecurringExpense[];
     savingsRules: SavingsRule[];
-    savingsTransactions: SavingsTransaction[];
     balanceAdjustments: BalanceAdjustment[];
     exchangeRates: ExchangeRate[];
     categories: Category[];

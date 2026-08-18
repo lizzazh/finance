@@ -1,7 +1,7 @@
 import { db } from '../db/database';
 import { currencyService } from './currency/currencyService';
 import { generateId } from '../utils/id';
-import type { Income, SavingsRule, SavingsTransaction, CurrencyCode } from '../types';
+import type { Income, SavingsRule, Expense, CurrencyCode } from '../types';
 
 /**
  * savingsCalculator — computes and atomically applies savings rules to incomes.
@@ -12,21 +12,20 @@ import type { Income, SavingsRule, SavingsTransaction, CurrencyCode } from '../t
  * - fixed: rule has its own currency; convert to income.currency by date rate
  *          savingsAmount = fixedAmount / rate(rule.currency → income.currency, income.date)
  *
- * IMPORTANT: savingsTransactions do NOT reduce currentBalance.
- * They only reduce availableBalance (what's free for spending).
+ * IMPORTANT: savings transactions do NOT reduce currentBalance automatically if they are in the future (status: planned).
+ * They only reduce currentBalance once they become 'completed'.
  *
- * Protection: one savingsTransaction per incomeId, enforced via IndexedDB transaction.
+ * Protection: one savings transaction per incomeId, enforced via IndexedDB transaction.
  */
 export const savingsCalculator = {
   /**
    * Apply the active savings rule to a specific income.
-   * Returns the created SavingsTransaction, or null if already applied or no rule.
    */
-  async applySavingsRule(incomeId: string): Promise<SavingsTransaction | null> {
-    return db.transaction('rw', [db.incomes, db.savingsTransactions, db.savingsRules], async () => {
-      // Check if already applied (source of truth: savingsTransactions table)
-      const existing = await db.savingsTransactions
-        .where('incomeId')
+  async applySavingsRule(incomeId: string): Promise<Expense | null> {
+    return db.transaction('rw', [db.incomes, db.expenses, db.savingsRules], async () => {
+      // Check if already applied (source of truth: expenses table)
+      const existing = await db.expenses
+        .where('percentageIncomeId')
         .equals(incomeId)
         .first();
 
@@ -99,22 +98,25 @@ export const savingsCalculator = {
       }
 
       const now = new Date().toISOString();
-      const transaction: SavingsTransaction = {
+      const transaction: Expense = {
         id: generateId(),
-        incomeId,
         amount: savingsAmount,
         currency: savingsCurrency,
         exchangeRate,
         baseAmount,
         baseCurrency,
-        ruleId: rule.id,
-        ruleType: rule.type,
-        ruleValue: rule.value,
+        categoryId: '__savings__',
+        description: 'Авто-накопление',
         date: income.date,
+        status: income.date <= now.slice(0, 10) ? 'completed' : 'planned',
+        amountMode: rule.type === 'percentage' ? 'percentage_of_income' : 'fixed',
+        percentageIncomeId: incomeId,
+        percentageValue: rule.type === 'percentage' ? rule.value : undefined,
         createdAt: now,
+        updatedAt: now,
       };
 
-      await db.savingsTransactions.add(transaction);
+      await db.expenses.add(transaction);
       await db.incomes.update(incomeId, { savingsApplied: true });
 
       return transaction;
