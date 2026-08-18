@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { db } from './db/database';
 import { AppLayout } from './components/ui/AppLayout';
 import { useSettings } from './hooks/useSettings';
 import { seedDatabase } from './db/seed';
@@ -23,6 +24,17 @@ export default function App() {
     async function init() {
       if (loading) return;
       try {
+        // Patch missing recurringExpenseId for savings to prevent duplicates
+        const recSavings = await db.recurringExpenses.where('categoryId').equals('__savings__').toArray();
+        for (const rs of recSavings) {
+          const savingsToFix = await db.savingsTransactions
+            .filter(s => !s.recurringExpenseId && s.ruleId === 'manual' && s.amount === rs.amount)
+            .toArray();
+          for (const s of savingsToFix) {
+            await db.savingsTransactions.update(s.id, { recurringExpenseId: rs.id });
+          }
+        }
+
         await seedDatabase();
         await recurringIncomeService.processAll();
         await recurringExpensesService.processAll();

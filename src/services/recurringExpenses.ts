@@ -24,8 +24,15 @@ export const recurringExpensesService = {
 
     while (isSameOrBefore(nextDate, cutoffDate)) {
       if (recurring.endDate && nextDate > recurring.endDate) break;
-      const existingExpenses = await expensesRepo.getByDateRange(nextDate, nextDate);
-      const isDuplicate = existingExpenses.some(exp => exp.recurringExpenseId === recurring.id);
+      
+      let isDuplicate = false;
+      if (recurring.categoryId === '__savings__') {
+        const existingSavings = await db.savingsTransactions.where('recurringExpenseId').equals(recurring.id).toArray();
+        isDuplicate = existingSavings.some(s => s.date === nextDate);
+      } else {
+        const existingExpenses = await expensesRepo.getByDateRange(nextDate, nextDate);
+        isDuplicate = existingExpenses.some(exp => exp.recurringExpenseId === recurring.id);
+      }
 
       if (!isDuplicate) {
         const baseCurrencySetting = await db.settings.get('baseCurrency');
@@ -50,6 +57,7 @@ export const recurringExpensesService = {
             ruleType,
             ruleValue,
             date: nextDate,
+            recurringExpenseId: recurring.id,
             createdAt: new Date().toISOString()
           });
         } else {

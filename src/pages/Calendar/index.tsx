@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, PlusCircle, ArrowDownRight, ArrowUpRight, Cl
 import { db } from '../../db/database';
 import { expensesRepo, incomesRepo, recurringExpensesRepo, recurringIncomesRepo } from '../../db/repositories';
 import { toDisplayDate, toDisplayMonth, startOfMonth, endOfMonth, today, getNextRecurringDate } from '../../utils/date';
-import { formatAmount } from '../../utils/format';
+import { formatAmount, getCurrencySymbol } from '../../utils/format';
 import { AddExpenseModal } from '../../components/expenses/AddExpenseModal';
 import { AddIncomeModal } from '../../components/incomes/AddIncomeModal';
 import type { Expense, Income, SavingsTransaction } from '../../types';
@@ -133,7 +133,7 @@ export default function CalendarPage() {
         if (re.endDate && cur > re.endDate) break;
 
         const alreadyExists = (evMap[cur] || []).some(
-          (e) => e.rawExpense?.recurringExpenseId === re.id
+          (e) => e.rawExpense?.recurringExpenseId === re.id || e.rawSavings?.recurringExpenseId === re.id
         );
         if (!alreadyExists) {
           addEv(cur, {
@@ -418,9 +418,18 @@ export default function CalendarPage() {
             const isToday = dateStr === today();
             const isSelected = dateStr === selectedDate;
 
-            const incTotal = dayEvs.filter((e) => e.type === 'income').reduce((sum, e) => sum + e.amount, 0);
-            const completedExpTotal = dayEvs.filter((e) => e.type === 'expense').reduce((sum, e) => sum + e.amount, 0);
-            const plannedExpTotal = dayEvs.filter((e) => e.type === 'planned').reduce((sum, e) => sum + e.amount, 0);
+            const incEvents = dayEvs.filter((e) => e.type === 'income');
+            const incTotal = incEvents.reduce((sum, e) => sum + e.amount, 0);
+            const incCurrency = incEvents[0]?.currency || 'UAH';
+            
+            const compExpEvents = dayEvs.filter((e) => e.type === 'expense');
+            const completedExpTotal = compExpEvents.reduce((sum, e) => sum + e.amount, 0);
+            const compExpCurrency = compExpEvents[0]?.currency || 'UAH';
+            
+            const planExpEvents = dayEvs.filter((e) => e.type === 'planned' || e.type === 'savings');
+            const plannedExpTotal = planExpEvents.reduce((sum, e) => sum + e.amount, 0);
+            const planExpCurrency = planExpEvents[0]?.currency || 'UAH';
+            
             const hasCompleted = completedExpTotal > 0;
             const hasPlanned = plannedExpTotal > 0;
 
@@ -444,13 +453,13 @@ export default function CalendarPage() {
                 {/* Micro amounts preview inside cell */}
                 <div className="flex flex-col gap-0.5 mt-1 overflow-hidden text-[10px]">
                   {incTotal > 0 && (
-                    <span className="text-emerald-600 font-medium truncate">+{Math.round(incTotal)}</span>
+                    <span className="text-emerald-600 font-medium truncate">+{Math.round(incTotal)}{getCurrencySymbol(incCurrency)}</span>
                   )}
                   {completedExpTotal > 0 && (
-                    <span className="text-blue-500 font-medium truncate">{Math.round(completedExpTotal)}</span>
+                    <span className="text-blue-500 font-medium truncate">{Math.round(completedExpTotal)}{getCurrencySymbol(compExpCurrency)}</span>
                   )}
                   {plannedExpTotal > 0 && (
-                    <span className="text-red-500 font-medium truncate">−{Math.round(plannedExpTotal)}</span>
+                    <span className="text-red-500 font-medium truncate">-{Math.round(plannedExpTotal)}{getCurrencySymbol(planExpCurrency)}</span>
                   )}
                 </div>
               </div>

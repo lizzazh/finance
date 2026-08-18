@@ -131,6 +131,7 @@ export interface SavingsTransaction {
   ruleType: 'percentage' | 'fixed';
   ruleValue: number;
   date: string; // 'YYYY-MM-DD'
+  recurringExpenseId?: string;
   createdAt: string;
 }
 
