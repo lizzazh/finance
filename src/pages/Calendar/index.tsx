@@ -207,8 +207,8 @@ export default function CalendarPage() {
   }
 
   async function handleDeleteEvent(ev: CalendarEvent) {
-    if (ev.sourceType === 'expense' && ev.rawExpense) {
-      if (window.confirm('Удалить этот расход?')) {
+    if ((ev.sourceType === 'expense' || ev.sourceType === 'savings') && ev.rawExpense) {
+      if (window.confirm(ev.sourceType === 'savings' ? 'Удалить это накопление?' : 'Удалить этот расход?')) {
         await expensesRepo.delete(ev.rawExpense.id);
         loadEvents();
       }
@@ -233,7 +233,7 @@ export default function CalendarPage() {
   async function handleMarkAsPaid(ev: CalendarEvent) {
     const now = new Date().toISOString();
     
-    if (ev.sourceType === 'expense' && ev.rawExpense) {
+    if ((ev.sourceType === 'expense' || ev.sourceType === 'savings') && ev.rawExpense) {
       await expensesRepo.update(ev.rawExpense.id, {
         status: 'completed',
         updatedAt: now
