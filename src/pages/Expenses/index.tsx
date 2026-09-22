@@ -128,8 +128,8 @@ export default function Expenses() {
                           {cat?.icon || '📦'}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-bold text-sm">{cat?.name || 'Без категории'}</div>
-                          {exp.description && <div className="text-xs text-secondary mt-0.5">{exp.description}</div>}
+                          <div className="font-bold text-sm truncate">{cat?.name || 'Без категории'}</div>
+                          {exp.description && <div className="text-xs text-secondary mt-0.5 truncate">{exp.description}</div>}
                         </div>
                         <div className="text-right shrink-0">
                           <div className="font-bold text-expense text-base">

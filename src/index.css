@@ -50,6 +50,15 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.25s ease, color 0.25s ease;
+  overflow-x: hidden;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
 body.modal-open {
@@ -64,6 +73,7 @@ body.modal-open {
   height: 100vh;
   height: 100dvh; /* Use dynamic viewport height for mobile browsers */
   grid-template-columns: 1fr;
+  overflow-x: hidden;
 }
 
 @media (min-width: 768px) {
@@ -75,7 +85,9 @@ body.modal-open {
 .app-main {
   padding: 0 1rem 1rem 1rem;
   overflow-y: auto;
+  overflow-x: hidden;
   padding-bottom: 80px;
+  min-width: 0;
 }
 @media (min-width: 768px) {
   .app-main {
@@ -209,6 +221,8 @@ body.modal-open {
   box-shadow: var(--shadow-card);
   border: 1px solid var(--color-border);
   transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .hero-card {
@@ -217,6 +231,7 @@ body.modal-open {
   border-radius: 1.25rem;
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-card);
+  min-width: 0;
 }
 
 .btn-primary {
@@ -619,6 +634,8 @@ body.modal-open {
   padding: 0.75rem;
   outline: none;
   transition: border-color 0.15s ease;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 .input:focus {
   border-color: var(--color-primary);
@@ -700,6 +717,8 @@ select option {
   justify-content: space-between;
   cursor: pointer;
   transition: all 0.15s ease;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .calendar-cell:hover {
@@ -747,6 +766,13 @@ select option {
 @media (max-width: 767px) {
   .app-main {
     padding: 0 0.75rem 5rem 0.75rem;
+  }
+  
+  .sticky-header {
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
   
   .modal {

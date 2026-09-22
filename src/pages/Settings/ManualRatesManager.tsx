@@ -23,7 +23,7 @@ export function ManualRatesManager({ baseCurrency }: ManualRatesManagerProps) {
       const recExp = await db.recurringExpenses.toArray();
       const recInc = await db.recurringIncomes.toArray();
 
-      const used = new Set<string>(['USD', 'EUR', 'PLN', 'GBP']);
+      const used = new Set<string>(['USD', 'EUR', 'PLN', 'GBP', 'MDL']);
       [...expenses, ...incomes, ...recExp, ...recInc].forEach(item => {
         if (item.currency && item.currency !== baseCurrency) {
           used.add(item.currency);
@@ -78,12 +78,12 @@ export function ManualRatesManager({ baseCurrency }: ManualRatesManagerProps) {
       </div>
       <div className="flex flex-col gap-3">
         {currencies.map(cur => (
-          <div key={cur} className="flex justify-between items-center bg-surface p-2 rounded-lg">
-            <span className="font-bold text-sm w-16">{cur}</span>
+          <div key={cur} className="flex justify-between items-center bg-surface p-2 rounded-lg gap-2">
+            <span className="font-bold text-sm w-12 shrink-0">{cur}</span>
             <input
               type="number"
               step="0.01"
-              className="input text-right w-32"
+              className="input text-right flex-1 min-w-0 max-w-[10rem]"
               placeholder={`Курс к ${baseCurrency}`}
               value={rates[cur] || ''}
               onChange={e => setRates(prev => ({ ...prev, [cur]: e.target.value }))}

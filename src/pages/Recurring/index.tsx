@@ -136,9 +136,9 @@ export default function Recurring() {
                     <div className="w-10 h-10 rounded-xl bg-primary-muted flex items-center justify-center text-xl shrink-0">
                       {cat?.icon || '📦'}
                     </div>
-                    <div className="min-w-0">
-                      <div className="font-bold">{cat?.name || 'Без категории'}</div>
-                      <div className="text-xs text-secondary mt-0.5">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold truncate">{cat?.name || 'Без категории'}</div>
+                      <div className="text-xs text-secondary mt-0.5 truncate">
                         {exp.description && <span>{exp.description} • </span>}
                         <span className="font-medium text-text">{toDisplayDate(exp.date, 'long')}</span>
                       </div>

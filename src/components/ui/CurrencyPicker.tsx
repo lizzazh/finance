@@ -61,7 +61,7 @@ export function CurrencyPicker({ value, onChange, className = '' }: CurrencyPick
 
       {open && (
         <div
-          className="absolute top-full right-0 mt-2 w-72 rounded-xl border border-border shadow-2xl z-[100] overflow-hidden flex flex-col"
+          className="absolute top-full right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-border shadow-2xl z-[100] overflow-hidden flex flex-col"
           style={{ backgroundColor: 'var(--color-surface)' }}
         >
           {/* Search */}

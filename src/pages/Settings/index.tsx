@@ -209,7 +209,7 @@ export default function SettingsPage() {
 
           <div className="h-[1px] bg-border" />
 
-          <div className="flex justify-between items-center gap-4">
+          <div className="flex justify-between items-center gap-4 flex-wrap">
             <div>
               <div className="font-semibold text-sm">Режим курсов</div>
               <div className="text-xs text-secondary">
@@ -259,7 +259,7 @@ export default function SettingsPage() {
 
           <div className="h-[1px] bg-border" />
 
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center flex-wrap gap-2">
             <div className="text-xs text-secondary">
               Разрешение браузера: {typeof window !== 'undefined' && 'Notification' in window ? (Notification.permission === 'granted' ? '✓ Включено' : Notification.permission === 'denied' ? '❌ Заблокировано' : '⚠️ Требуется разрешение') : 'Не поддерживается браузером'}
             </div>
